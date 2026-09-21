@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   title: "Criafy — Da ideia à venda em minutos",
   description:
-    "A IA cria seu produto digital, encontra seu público, escreve suas ofertas e publica sua página de vendas. Você só divulga e vende.",
+    "A plataforma no-code que transforma sua ideia em infoproduto pronto pra vender.",
 };
 
 export default function RootLayout({
@@ -20,7 +21,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <SessionProvider>{children}</SessionProvider>
+      </body>
     </html>
   );
 }
