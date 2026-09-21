@@ -269,11 +269,10 @@ export default function Dashboard() {
                     className="w-full px-4 py-3 rounded-xl border border-neutral-300"
                   >
                     <option value="ebook">Ebook</option>
-                    <option value="curso">Curso online</option>
-                    <option value="mentoria">Mentoria</option>
-                    <option value="comunidade">Comunidade</option>
-                    <option value="planilha">Planilha/Template</option>
                   </select>
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Por enquanto só ebook — outros formatos em breve.
+                  </p>
                 </div>
                 <div>
                   <label className="block font-bold mb-2">Preço sugerido (R$)</label>
