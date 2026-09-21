@@ -40,12 +40,12 @@ export default function LandingPage() {
             ofertas e publica sua página de vendas. Você só divulga e vende.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/dashboard"
+            <a
+              href="#planos"
               className="bg-black text-white px-8 py-4 rounded-full text-base font-semibold hover:bg-neutral-800 transition"
             >
-              Criar meu primeiro produto grátis
-            </Link>
+              Ver planos e começar
+            </a>
             <a
               href="#como-funciona"
               className="border border-neutral-300 px-8 py-4 rounded-full text-base font-semibold hover:bg-neutral-50 transition"
@@ -54,7 +54,7 @@ export default function LandingPage() {
             </a>
           </div>
           <p className="text-xs text-neutral-500 mt-6">
-            Sem cartão · Sem enrolação · Comece em 60 segundos
+            A partir de R$ 197 · Cancele quando quiser · Comece em 60 segundos
           </p>
         </div>
       </section>
@@ -131,17 +131,18 @@ export default function LandingPage() {
               Planos
             </p>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight">
-              Comece grátis. Escale quando quiser.
+              Escolha seu plano.<br />
+              <span className="gradient-text">Comece a vender hoje.</span>
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {plans.map((p) => (
               <div
                 key={p.name}
                 className={`p-8 rounded-3xl ${
                   p.featured
-                    ? "bg-black text-white border-2 border-brand-500 scale-105 shadow-2xl"
+                    ? "bg-black text-white border-2 border-brand-500 shadow-2xl md:scale-105"
                     : "bg-white border border-neutral-200"
                 }`}
               >
@@ -170,8 +171,10 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href="/dashboard"
+                <a
+                  href={p.checkoutUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={`block text-center py-3 rounded-full font-semibold transition ${
                     p.featured
                       ? "bg-white text-black hover:bg-neutral-100"
@@ -179,7 +182,7 @@ export default function LandingPage() {
                   }`}
                 >
                   {p.cta}
-                </Link>
+                </a>
               </div>
             ))}
           </div>
@@ -219,14 +222,14 @@ export default function LandingPage() {
             <span className="gradient-text">está a 1 clique.</span>
           </h2>
           <p className="text-xl text-neutral-400 mb-10">
-            Crie seu produto agora, sem cartão, sem risco.
+            Escolha seu plano e comece agora — sem enrolação, sem complicação.
           </p>
-          <Link
-            href="/dashboard"
+          <a
+            href="#planos"
             className="inline-block bg-white text-black px-10 py-5 rounded-full text-lg font-bold hover:bg-neutral-100 transition"
           >
-            Começar grátis →
-          </Link>
+            Ver planos →
+          </a>
         </div>
       </section>
 
@@ -270,49 +273,42 @@ const steps = [
 
 const plans = [
   {
-    name: "Grátis",
-    tagline: "Pra testar antes de investir.",
-    price: "R$ 0",
-    per: "para sempre",
-    features: [
-      "1 produto por mês",
-      "5 grupos sugeridos",
-      "3 copies prontas",
-      "Página de vendas básica",
-    ],
-    cta: "Começar grátis",
-    featured: false,
-  },
-  {
-    name: "Pro",
-    tagline: "Pra quem quer resultado sério.",
-    price: "R$ 47",
-    per: "/ mês",
-    features: [
-      "Produtos ilimitados",
-      "50+ grupos por produto",
-      "10 copies por produto",
-      "Páginas com domínio custom",
-      "Analytics completo",
-      "Suporte prioritário",
-    ],
-    cta: "Assinar Pro",
-    featured: true,
-  },
-  {
-    name: "Agência",
-    tagline: "Pra quem vende pros outros.",
+    name: "Mensal",
+    tagline: "Pra quem quer começar agora, sem compromisso longo.",
     price: "R$ 197",
     per: "/ mês",
     features: [
-      "Tudo do Pro",
-      "10 subcontas de cliente",
-      "White label",
-      "API de integração",
-      "Onboarding 1:1",
+      "Produtos ilimitados",
+      "Todos os nichos disponíveis",
+      "10 copies prontas por produto",
+      "Páginas de vendas profissionais",
+      "PDF do ebook gerado automaticamente",
+      "Cancele quando quiser",
+      "Suporte prioritário",
     ],
-    cta: "Falar com vendas",
+    cta: "Assinar plano mensal",
     featured: false,
+    checkoutUrl:
+      "https://checkout.applyfy.com.br/checkout/cmubahyei00da01olqc4ksrtk?offer=HRFF64Q",
+  },
+  {
+    name: "Vitalício",
+    tagline: "Pra quem quer economizar e ter acesso pra sempre.",
+    price: "R$ 297",
+    per: "pagamento único",
+    features: [
+      "Tudo do plano mensal",
+      "Acesso vitalício — pague uma vez, use pra sempre",
+      "Sem mensalidade, sem renovação",
+      "Todas as atualizações futuras inclusas",
+      "Economia equivalente a 8 meses do plano mensal",
+      "Suporte vitalício",
+      "Melhor custo-benefício",
+    ],
+    cta: "Garantir acesso vitalício",
+    featured: true,
+    checkoutUrl:
+      "https://checkout.applyfy.com.br/checkout/cmubahyei00da01olqc4ksrtk?offer=A3ZSAEW",
   },
 ];
 
