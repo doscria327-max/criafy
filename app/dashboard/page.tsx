@@ -1,396 +1,226 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { decodeProduto } from "@/lib/encoding";
+import type { Produto } from "@/lib/storage";
 
-type Produto = {
-  slug: string;
-  nome: string;
-  promessa: string;
-  publico: string;
-  nicho: string;
-  nichoId: string;
-  preco: number;
-  formato: string;
-  estrutura: string[];
-  beneficios: string[];
-  bonus: string[];
-  headline: string;
-  subheadline: string;
-  copyVendas: string;
-  garantia: string;
-  faq: { q: string; a: string }[];
-  grupos: { nome: string; plataforma: string; link: string; risco: string; motivo: string }[];
-  copies: { titulo: string; texto: string }[];
-};
+export default function ProdutoPage() {
+  const params = useSearchParams();
+  const [p, setP] = useState<Produto | null>(null);
+  const [ready, setReady] = useState(false);
 
-export default function Dashboard() {
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
-  const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
+  useEffect(() => {
+    const d = params.get("d");
+    if (d) {
+      const dec = decodeProduto(d);
+      setP(dec);
+    }
+    setReady(true);
+  }, [params]);
 
-  const [nicho, setNicho] = useState("");
-  const [publico, setPublico] = useState("");
-  const [formato, setFormato] = useState("ebook");
-  const [preco, setPreco] = useState(47);
-
-  const [produto, setProduto] = useState<Produto | null>(null);
-
-  async function criarProduto(e: React.FormEvent) {
-    e.preventDefault();
-    setErro(null);
-    setLoading(true);
+  async function baixarPdf() {
+    if (!p) return;
     try {
-      const r = await fetch("/api/criar-produto", {
+      const r = await fetch("/api/gerar-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nicho, publico, formato, preco }),
+        body: JSON.stringify({ produto: p }),
       });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || "Erro");
-      setProduto(data.produto);
-      setStep(2);
-    } catch (err: any) {
-      setErro(err.message);
-    } finally {
-      setLoading(false);
+      if (!r.ok) throw new Error("Falha ao gerar PDF");
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${p.slug}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Não foi possível gerar o PDF agora. Tente novamente em instantes.");
     }
   }
 
-  async function acharGrupos() {
-    if (!produto) return;
-    setLoading(true);
-    setErro(null);
-    try {
-      const r = await fetch("/api/achar-grupos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: produto.slug }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || "Erro");
-      setProduto({ ...produto, grupos: data.grupos });
-      setStep(3);
-    } catch (err: any) {
-      setErro(err.message);
-    } finally {
-      setLoading(false);
-    }
+  if (!ready) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <p className="text-neutral-500">Carregando...</p>
+      </main>
+    );
   }
 
-  async function gerarCopy() {
-    if (!produto) return;
-    setLoading(true);
-    setErro(null);
-    try {
-      const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-      const r = await fetch("/api/gerar-copy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: produto.slug, baseUrl }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || "Erro");
-      setProduto({ ...produto, copies: data.copies });
-      setStep(4);
-    } catch (err: any) {
-      setErro(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function reset() {
-    setProduto(null);
-    setNicho("");
-    setPublico("");
-    setStep(1);
-    setErro(null);
-  }
-
-  return (
-    <main className="min-h-screen bg-neutral-50">
-      <header className="bg-white border-b border-neutral-200 sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-black">
-            Cria<span className="gradient-text">fy</span>
+  if (!p) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <div className="text-center px-6">
+          <p className="text-6xl mb-4">🤷</p>
+          <h1 className="text-4xl font-black mb-2">Página não encontrada</h1>
+          <p className="text-neutral-600 mb-8">
+            O link parece incompleto. Crie um produto no dashboard pra gerar uma página.
+          </p>
+          <Link
+            href="/dashboard"
+            className="inline-block bg-black text-white px-8 py-4 rounded-full font-bold"
+          >
+            Criar produto →
           </Link>
-          <div className="text-sm text-neutral-500">Passo {step} de 5</div>
         </div>
-        <div className="h-1 bg-neutral-100">
-          <div
-            className="h-full bg-gradient-to-r from-brand-600 to-pink-500 transition-all"
-            style={{ width: `${(step / 5) * 100}%` }}
-          />
-        </div>
-      </header>
+      </main>
+    );
+  }
 
-      <div className="max-w-3xl mx-auto px-6 py-12">
-        {erro && (
-          <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-sm">
-            {erro}
+  return (
+    <main className="min-h-screen bg-white">
+      {/* HERO */}
+      <section className="relative bg-neutral-950 text-white py-24 overflow-hidden">
+        <div className="absolute inset-0 gradient-bg opacity-30" />
+        <div className="relative max-w-4xl mx-auto px-6 text-center">
+          <div className="inline-block bg-brand-500/20 border border-brand-500/40 rounded-full px-4 py-1.5 text-xs font-bold text-brand-300 mb-6">
+            {p.nicho.toUpperCase()}
           </div>
-        )}
+          <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.05] mb-6">
+            {p.headline}
+          </h1>
+          <p className="text-xl text-neutral-300 mb-10 max-w-2xl mx-auto">{p.subheadline}</p>
+          <a
+            href="#comprar"
+            className="inline-block bg-white text-black px-10 py-5 rounded-full text-lg font-black hover:bg-neutral-100 transition"
+          >
+            QUERO AGORA — R$ {p.preco}
+          </a>
+          <p className="text-xs text-neutral-500 mt-4">{p.garantia}</p>
+        </div>
+      </section>
 
-        {step === 1 && (
-          <div>
-            <h1 className="text-4xl font-black mb-3">Vamos criar seu produto</h1>
-            <p className="text-neutral-600 mb-8">
-              Responda duas perguntas. O motor de geração cuida do resto — em segundos.
+      <section className="py-20">
+        <div className="max-w-3xl mx-auto px-6">
+          <p className="text-sm font-bold text-brand-600 uppercase tracking-widest mb-4">
+            Por que isso funciona
+          </p>
+          <div className="prose prose-lg max-w-none text-neutral-800 whitespace-pre-wrap">
+            {p.copyVendas}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 bg-neutral-50">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-black text-center mb-12">
+            O que você recebe
+          </h2>
+          <div className="space-y-3">
+            {p.estrutura.map((mod, i) => (
+              <div key={i} className="p-5 bg-white rounded-2xl border border-neutral-200 flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center font-black flex-shrink-0">
+                  {i + 1}
+                </div>
+                <p className="font-semibold text-neutral-800">{mod}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-black text-center mb-12">Benefícios reais</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {p.beneficios.map((b, i) => (
+              <div key={i} className="p-5 rounded-2xl border border-neutral-200 flex items-start gap-3">
+                <span className="text-green-500 text-xl">✓</span>
+                <p className="font-medium">{b}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {p.bonus && p.bonus.length > 0 && (
+        <section className="py-20 bg-gradient-to-br from-brand-50 to-pink-50">
+          <div className="max-w-3xl mx-auto px-6">
+            <p className="text-sm font-bold text-brand-600 uppercase tracking-widest text-center mb-3">
+              Bônus especiais
             </p>
-
-            <form onSubmit={criarProduto} className="bg-white p-8 rounded-3xl border border-neutral-200 space-y-6">
-              <div>
-                <label className="block font-bold mb-2">Qual é o seu nicho?</label>
-                <input
-                  required
-                  value={nicho}
-                  onChange={(e) => setNicho(e.target.value)}
-                  placeholder="ex: emagrecimento, finanças, relacionamento, culinária..."
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-300 focus:border-brand-500 focus:outline-none"
-                />
-                <p className="text-xs text-neutral-500 mt-2">
-                  Nichos disponíveis: emagrecimento, finanças, relacionamento, carreira,
-                  marketing digital, espiritualidade, culinária, estudos/concursos. Outros
-                  nichos usam o modelo genérico.
-                </p>
-              </div>
-
-              <div>
-                <label className="block font-bold mb-2">Quem é o público?</label>
-                <textarea
-                  required
-                  value={publico}
-                  onChange={(e) => setPublico(e.target.value)}
-                  rows={3}
-                  placeholder="ex: mulheres 30-45 anos que já tentaram várias dietas e nunca conseguiram manter..."
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-300 focus:border-brand-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold mb-2">Formato</label>
-                  <select
-                    value={formato}
-                    onChange={(e) => setFormato(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-neutral-300"
-                  >
-                    <option value="ebook">Ebook</option>
-                    <option value="curso">Curso online</option>
-                    <option value="mentoria">Mentoria</option>
-                    <option value="comunidade">Comunidade</option>
-                    <option value="planilha">Planilha/Template</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold mb-2">Preço sugerido (R$)</label>
-                  <input
-                    type="number"
-                    min={7}
-                    value={preco}
-                    onChange={(e) => setPreco(Number(e.target.value))}
-                    className="w-full px-4 py-3 rounded-xl border border-neutral-300"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-black text-white py-4 rounded-full font-bold hover:bg-neutral-800 transition disabled:opacity-50"
-              >
-                {loading ? "Criando seu produto..." : "Criar meu produto →"}
-              </button>
-            </form>
-          </div>
-        )}
-
-        {step === 2 && produto && (
-          <div>
-            <div className="mb-6 flex items-center gap-2 text-green-700 font-semibold">
-              <span className="text-2xl">✓</span> Produto criado
-            </div>
-            <h1 className="text-4xl font-black mb-3">{produto.nome}</h1>
-            <p className="text-xl text-neutral-600 mb-8">{produto.promessa}</p>
-
-            <div className="grid md:grid-cols-2 gap-4 mb-4">
-              <Card title="Estrutura">
-                <ul className="space-y-2 text-sm">
-                  {produto.estrutura.map((m, i) => <li key={i}>{m}</li>)}
-                </ul>
-              </Card>
-              <Card title="Benefícios">
-                <ul className="space-y-2 text-sm">
-                  {produto.beneficios.map((b, i) => <li key={i}>✓ {b}</li>)}
-                </ul>
-              </Card>
-            </div>
-
-            <Card title="Bônus inclusos">
-              <ul className="space-y-2 text-sm">
-                {produto.bonus.map((b, i) => <li key={i}>🎁 {b}</li>)}
-              </ul>
-            </Card>
-
-            <Card title="Headline da página">
-              <p className="text-2xl font-bold mb-2">{produto.headline}</p>
-              <p className="text-neutral-600">{produto.subheadline}</p>
-            </Card>
-
-            <a
-              href={`/api/gerar-pdf?slug=${produto.slug}`}
-              className="mt-4 w-full inline-block text-center bg-brand-600 text-white py-4 rounded-full font-bold hover:bg-brand-700 transition"
-            >
-              📥 Baixar PDF do ebook
-            </a>
-
-            <button
-              onClick={acharGrupos}
-              disabled={loading}
-              className="w-full mt-3 bg-black text-white py-4 rounded-full font-bold hover:bg-neutral-800 disabled:opacity-50"
-            >
-              {loading ? "Achando grupos ideais..." : "Próximo: achar grupos →"}
-            </button>
-          </div>
-        )}
-
-        {step === 3 && produto && (
-          <div>
-            <div className="mb-6 flex items-center gap-2 text-green-700 font-semibold">
-              <span className="text-2xl">✓</span> {produto.grupos.length} grupos encontrados
-            </div>
-            <h1 className="text-4xl font-black mb-8">Onde seu público está agora</h1>
-
-            <div className="space-y-3 mb-8">
-              {produto.grupos.map((g, i) => (
-                <div key={i} className="p-5 bg-white rounded-2xl border border-neutral-200">
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">
-                      {g.plataforma}
-                    </span>
-                    <RiscoBadge risco={g.risco} />
-                  </div>
-                  <p className="font-bold">{g.nome}</p>
-                  <p className="text-xs font-mono text-neutral-500 mt-1">{g.link}</p>
-                  <p className="text-xs text-neutral-600 mt-2 italic">{g.motivo}</p>
+            <h2 className="text-3xl md:text-4xl font-black text-center mb-12">
+              Além do curso principal, você recebe:
+            </h2>
+            <div className="space-y-4">
+              {p.bonus.map((b, i) => (
+                <div key={i} className="p-5 bg-white rounded-2xl border border-brand-200 flex items-center gap-4">
+                  <span className="text-3xl">🎁</span>
+                  <p className="font-semibold">{b}</p>
                 </div>
               ))}
             </div>
-
-            <button
-              onClick={gerarCopy}
-              disabled={loading}
-              className="w-full bg-black text-white py-4 rounded-full font-bold hover:bg-neutral-800 disabled:opacity-50"
-            >
-              {loading ? "Escrevendo as ofertas..." : "Próximo: gerar copies →"}
-            </button>
           </div>
-        )}
+        </section>
+      )}
 
-        {step === 4 && produto && (
-          <div>
-            <div className="mb-6 flex items-center gap-2 text-green-700 font-semibold">
-              <span className="text-2xl">✓</span> 10 copies prontas pra postar
-            </div>
-            <h1 className="text-4xl font-black mb-8">Ofertas prontas</h1>
+      <section className="py-16 bg-neutral-50">
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <p className="text-sm font-bold text-neutral-500 uppercase tracking-widest mb-3">Preview</p>
+          <h3 className="text-2xl font-black mb-6">Baixe uma amostra do material</h3>
+          <button
+            onClick={baixarPdf}
+            className="inline-block bg-white border-2 border-neutral-900 text-neutral-900 px-8 py-4 rounded-full font-bold hover:bg-neutral-900 hover:text-white transition"
+          >
+            📥 Baixar PDF de amostra
+          </button>
+        </div>
+      </section>
 
-            <div className="space-y-4 mb-8">
-              {produto.copies.map((c, i) => (
-                <CopyCard key={i} titulo={c.titulo} texto={c.texto} />
-              ))}
-            </div>
+      <section id="comprar" className="py-24 bg-black text-white">
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-4xl md:text-5xl font-black mb-6">
+            Você pode continuar tentando sozinho.<br />
+            <span className="gradient-text">Ou pode começar agora.</span>
+          </h2>
+          <p className="text-xl text-neutral-400 mb-8">{p.subheadline}</p>
 
-            <button
-              onClick={() => setStep(5)}
-              className="w-full bg-black text-white py-4 rounded-full font-bold hover:bg-neutral-800"
-            >
-              Próximo: ver minha página →
-            </button>
-          </div>
-        )}
-
-        {step === 5 && produto && (
-          <div className="text-center">
-            <div className="text-6xl mb-6">🚀</div>
-            <h1 className="text-4xl font-black mb-4">Sua página está no ar!</h1>
-            <p className="text-neutral-600 mb-8">
-              Página profissional gerada. É só divulgar.
+          <div className="inline-block bg-white text-black rounded-3xl p-8 mb-6">
+            <p className="text-sm font-bold text-neutral-500 uppercase tracking-widest mb-2">
+              De R$ {p.preco * 3}
             </p>
-
-            <div className="bg-white p-6 rounded-2xl border border-neutral-200 mb-6">
-              <p className="text-xs text-neutral-500 mb-1">Link da página</p>
-              <p className="font-mono text-brand-600 break-all">
-                {typeof window !== "undefined"
-                  ? `${window.location.origin}/produto/${produto.slug}`
-                  : `/produto/${produto.slug}`}
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                href={`/produto/${produto.slug}`}
-                target="_blank"
-                className="bg-black text-white px-8 py-4 rounded-full font-bold hover:bg-neutral-800"
-              >
-                Ver página →
-              </Link>
-              <a
-                href={`/api/gerar-pdf?slug=${produto.slug}`}
-                className="bg-brand-600 text-white px-8 py-4 rounded-full font-bold hover:bg-brand-700"
-              >
-                📥 Baixar PDF
-              </a>
-              <button
-                onClick={reset}
-                className="border border-neutral-300 px-8 py-4 rounded-full font-bold hover:bg-neutral-50"
-              >
-                Criar outro
-              </button>
-            </div>
+            <div className="text-6xl font-black mb-2">R$ {p.preco}</div>
+            <p className="text-sm text-neutral-600 mb-6">Pagamento único</p>
+            <button className="bg-black text-white px-10 py-4 rounded-full font-black hover:bg-neutral-800">
+              QUERO ACESSO AGORA →
+            </button>
           </div>
-        )}
-      </div>
+
+          <p className="text-sm text-neutral-500">🔒 {p.garantia}</p>
+        </div>
+      </section>
+
+      <section className="py-20">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-black text-center mb-12">
+            Perguntas frequentes
+          </h2>
+          <div className="space-y-3">
+            {p.faq.map((f, i) => (
+              <details key={i} className="group bg-neutral-50 rounded-2xl p-6 cursor-pointer">
+                <summary className="flex justify-between items-center font-bold list-none">
+                  {f.q}
+                  <span className="text-brand-600 group-open:rotate-45 transition text-2xl">+</span>
+                </summary>
+                <p className="mt-3 text-neutral-600">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <footer className="py-10 bg-neutral-950 text-neutral-500 text-sm text-center">
+        <p className="mb-2">
+          Página gerada com{" "}
+          <Link href="/" className="text-brand-400 hover:underline font-bold">
+            Criafy
+          </Link>
+        </p>
+        <p className="text-xs">© {new Date().getFullYear()} · Todos os direitos reservados</p>
+      </footer>
     </main>
-  );
-}
-
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-white p-6 rounded-2xl border border-neutral-200 mb-4">
-      <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-3">{title}</p>
-      {children}
-    </div>
-  );
-}
-
-function RiscoBadge({ risco }: { risco: string }) {
-  const lower = risco.toLowerCase();
-  const nivel = lower.startsWith("baixo")
-    ? { label: "Baixo risco", color: "bg-green-100 text-green-700" }
-    : lower.startsWith("medio") || lower.startsWith("médio")
-    ? { label: "Médio risco", color: "bg-yellow-100 text-yellow-700" }
-    : { label: "Alto risco", color: "bg-red-100 text-red-700" };
-  return <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${nivel.color}`}>{nivel.label}</span>;
-}
-
-function CopyCard({ titulo, texto }: { titulo: string; texto: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div className="p-5 bg-white rounded-2xl border border-neutral-200">
-      <div className="flex justify-between items-start gap-3 mb-3">
-        <p className="font-bold text-sm text-brand-700">{titulo}</p>
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(texto);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          }}
-          className="text-xs font-bold px-3 py-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200"
-        >
-          {copied ? "✓ Copiado" : "Copiar"}
-        </button>
-      </div>
-      <p className="text-sm text-neutral-700 whitespace-pre-wrap">{texto}</p>
-    </div>
   );
 }
