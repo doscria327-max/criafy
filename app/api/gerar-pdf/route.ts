@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import PDFDocument from "pdfkit";
 import { getProduto } from "@/lib/storage";
 import { encontrarNicho } from "@/lib/nichos-db";
@@ -9,18 +9,24 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get("slug");
   if (!slug) {
-    return NextResponse.json({ error: "slug obrigatório" }, { status: 400 });
+    return new Response(JSON.stringify({ error: "slug obrigatório" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const produto = getProduto(slug);
   if (!produto) {
-    return NextResponse.json({ error: "produto não encontrado" }, { status: 404 });
+    return new Response(JSON.stringify({ error: "produto não encontrado" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const nicho = encontrarNicho(produto.nicho);
 
   // Gera o PDF em memória
-  const buffer = await new Promise<Buffer>((resolve, reject) => {
+  const buffer: Buffer = await new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: "A4",
       margins: { top: 60, bottom: 60, left: 60, right: 60 },
@@ -172,7 +178,9 @@ export async function GET(req: NextRequest) {
     doc.end();
   });
 
-  return new NextResponse(buffer, {
+  // Response nativa aceita Buffer/Uint8Array sem drama de tipagem
+  return new Response(new Uint8Array(buffer), {
+    status: 200,
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${produto.slug}.pdf"`,
