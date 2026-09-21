@@ -176,12 +176,22 @@ export default function Dashboard() {
             <Link href="/" className="text-xl font-black">
               Cria<span className="gradient-text">fy</span>
             </Link>
-            <button
-              onClick={() => signOut({ callbackUrl: "/" })}
-              className="text-sm text-neutral-600 hover:text-brand-600"
-            >
-              Sair
-            </button>
+            <div className="flex items-center gap-4">
+              {(session?.user as any)?.role === "admin" && (
+                <Link
+                  href="/admin"
+                  className="text-sm font-bold text-brand-600 hover:text-brand-800"
+                >
+                  Painel admin
+                </Link>
+              )}
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="text-sm text-neutral-600 hover:text-brand-600"
+              >
+                Sair
+              </button>
+            </div>
           </div>
         </header>
 
@@ -206,15 +216,25 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen bg-neutral-50">
       <header className="bg-white border-b border-neutral-200 sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-black">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link href="/dashboard" className="text-xl font-black">
             Cria<span className="gradient-text">fy</span>
           </Link>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-neutral-500">Passo {step} de 5</div>
+          <div className="flex items-center gap-6 text-sm font-semibold">
+            <Link href="/dashboard" className="text-brand-600">Criar produto</Link>
+            <Link href="/meus-produtos" className="text-neutral-700 hover:text-brand-600">Meus produtos</Link>
+            <Link href="/conta" className="text-neutral-700 hover:text-brand-600">Conta</Link>
+            {(session?.user as any)?.role === "admin" && (
+              <Link
+                href="/admin"
+                className="font-bold text-brand-600 hover:text-brand-800"
+              >
+                Painel admin
+              </Link>
+            )}
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
-              className="text-sm text-neutral-600 hover:text-brand-600"
+              className="text-neutral-600 hover:text-brand-600"
             >
               Sair
             </button>

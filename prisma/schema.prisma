@@ -23,9 +23,31 @@ model User {
   subscription    Subscription?
   purchaseIntents PurchaseIntent[]
   sessions        Session[]
+  produtos        Produto[]
   auditLogs       AuditLog[]      @relation("actor")
 
   @@index([email])
+}
+
+model Produto {
+  id          String   @id @default(cuid())
+  userId      String
+  slug        String
+  nome        String
+  promessa    String
+  publico     String
+  nicho       String
+  nichoId     String
+  preco       Int
+  formato     String   @default("ebook")
+  linkCheckout String?
+  token       String   @db.Text
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([slug])
 }
 
 model Session {
