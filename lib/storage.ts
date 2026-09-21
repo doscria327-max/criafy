@@ -1,8 +1,13 @@
 import fs from "fs";
 import path from "path";
 
-// Storage local em JSON. Em produção séria troque por Vercel KV / Postgres.
-const DATA_DIR = path.join(process.cwd(), "data");
+// Em produção (Vercel) o único diretório gravável é /tmp.
+// Localmente, usa a pasta data/ do projeto.
+const IS_VERCEL = process.env.VERCEL === "1";
+const DATA_DIR = IS_VERCEL
+  ? path.join("/tmp", "criafy-data")
+  : path.join(process.cwd(), "data");
+
 const DB_FILE = path.join(DATA_DIR, "produtos.json");
 
 export type Produto = {
@@ -28,17 +33,26 @@ export type Produto = {
 };
 
 function ensureDb(): Produto[] {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(DB_FILE)) fs.writeFileSync(DB_FILE, "[]");
-  return JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!fs.existsSync(DB_FILE)) fs.writeFileSync(DB_FILE, "[]");
+    return JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
+  } catch (e) {
+    console.error("Erro ao acessar storage:", e);
+    return [];
+  }
 }
 
 export function saveProduto(p: Produto) {
-  const all = ensureDb();
-  const idx = all.findIndex((x) => x.slug === p.slug);
-  if (idx >= 0) all[idx] = p;
-  else all.push(p);
-  fs.writeFileSync(DB_FILE, JSON.stringify(all, null, 2));
+  try {
+    const all = ensureDb();
+    const idx = all.findIndex((x) => x.slug === p.slug);
+    if (idx >= 0) all[idx] = p;
+    else all.push(p);
+    fs.writeFileSync(DB_FILE, JSON.stringify(all, null, 2));
+  } catch (e) {
+    console.error("Erro ao salvar produto:", e);
+  }
 }
 
 export function getProduto(slug: string): Produto | null {
