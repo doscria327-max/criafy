@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { ADMIN_PATH } from "@/lib/config";
 
 type Produto = {
   slug: string;
@@ -179,7 +180,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-4">
               {(session?.user as any)?.role === "admin" && (
                 <Link
-                  href="/admin"
+                  href={ADMIN_PATH}
                   className="text-sm font-bold text-brand-600 hover:text-brand-800"
                 >
                   Painel admin
@@ -226,7 +227,7 @@ export default function Dashboard() {
             <Link href="/conta" className="text-neutral-700 hover:text-brand-600">Conta</Link>
             {(session?.user as any)?.role === "admin" && (
               <Link
-                href="/admin"
+                href={ADMIN_PATH}
                 className="font-bold text-brand-600 hover:text-brand-800"
               >
                 Painel admin

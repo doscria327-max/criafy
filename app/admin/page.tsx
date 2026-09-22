@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import AdminHeader from "@/components/AdminHeader";
+import { adminUrl } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -58,26 +59,45 @@ export default async function AdminDashboard() {
           <Metric label="Suspensos" value={suspensos} color="red" />
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
-            href="/admin/usuarios"
+            href={adminUrl("/usuarios")}
             className="p-6 bg-white rounded-2xl border border-neutral-200 hover:border-brand-400 hover:shadow-md transition"
           >
             <p className="text-3xl mb-2">👥</p>
-            <h3 className="font-black text-lg mb-1">Gerenciar usuários</h3>
+            <h3 className="font-black text-lg mb-1">Usuários</h3>
             <p className="text-sm text-neutral-600">
-              Ver todos, filtrar, liberar acesso manualmente, suspender, alterar planos.
+              Ver todos, liberar, suspender, alterar planos.
             </p>
           </Link>
-
           <Link
-            href="/admin/usuarios?status=payment_pending"
+            href={adminUrl("/pagamentos")}
+            className="p-6 bg-white rounded-2xl border border-neutral-200 hover:border-brand-400 hover:shadow-md transition"
+          >
+            <p className="text-3xl mb-2">💳</p>
+            <h3 className="font-black text-lg mb-1">Pagamentos</h3>
+            <p className="text-sm text-neutral-600">
+              Histórico de intenções e liberações.
+            </p>
+          </Link>
+          <Link
+            href={adminUrl("/projetos")}
+            className="p-6 bg-white rounded-2xl border border-neutral-200 hover:border-brand-400 hover:shadow-md transition"
+          >
+            <p className="text-3xl mb-2">📦</p>
+            <h3 className="font-black text-lg mb-1">Projetos</h3>
+            <p className="text-sm text-neutral-600">
+              Produtos criados por todos os usuários.
+            </p>
+          </Link>
+          <Link
+            href={adminUrl("/usuarios?status=payment_pending")}
             className="p-6 bg-white rounded-2xl border border-neutral-200 hover:border-brand-400 hover:shadow-md transition"
           >
             <p className="text-3xl mb-2">⏳</p>
-            <h3 className="font-black text-lg mb-1">Pagamentos pendentes</h3>
+            <h3 className="font-black text-lg mb-1">Pendentes</h3>
             <p className="text-sm text-neutral-600">
-              Confira quem já pagou na Applyfy e libere o acesso.
+              Quem pagou na Applyfy e precisa ser liberado.
             </p>
           </Link>
         </div>

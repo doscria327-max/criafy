@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { adminUrl } from "@/lib/config";
 
 export default function UsuariosSearch({
   initialQ,
@@ -18,7 +19,9 @@ export default function UsuariosSearch({
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (activeStatus) params.set("status", activeStatus);
-    router.push(`/admin/usuarios${params.toString() ? "?" + params.toString() : ""}`);
+    router.push(
+      adminUrl("/usuarios") + (params.toString() ? "?" + params.toString() : "")
+    );
   }
 
   return (
@@ -38,7 +41,7 @@ export default function UsuariosSearch({
       </button>
       {activeStatus && (
         <Link
-          href="/admin/usuarios"
+          href={adminUrl("/usuarios")}
           className="border border-neutral-300 px-4 py-2 rounded-xl text-sm hover:bg-neutral-50 flex items-center"
         >
           Limpar

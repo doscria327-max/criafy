@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import AdminHeader from "@/components/AdminHeader";
+import { adminUrl } from "@/lib/config";
 import UsuarioAcoes from "./acoes";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +43,7 @@ export default async function UsuarioDetalhePage({
         <AdminHeader current="usuarios" />
         <div className="max-w-4xl mx-auto px-6 py-16 text-center">
           <p className="text-neutral-600 mb-4">Usuário não encontrado.</p>
-          <Link href="/admin/usuarios" className="text-brand-600 font-bold">
+          <Link href={adminUrl("/usuarios")} className="text-brand-600 font-bold">
             ← Voltar
           </Link>
         </div>
@@ -59,7 +60,7 @@ export default async function UsuarioDetalhePage({
 
       <div className="max-w-4xl mx-auto px-6 py-8">
         <Link
-          href="/admin/usuarios"
+          href={adminUrl("/usuarios")}
           className="text-sm text-brand-600 hover:underline mb-4 inline-block"
         >
           ← Voltar

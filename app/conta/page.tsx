@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { ADMIN_PATH } from "@/lib/config";
 
 type ContaInfo = {
   id: string;
@@ -376,7 +377,7 @@ export function UserHeader({ isAdmin }: { isAdmin: boolean }) {
             Conta
           </Link>
           {isAdmin && (
-            <Link href="/admin" className="font-bold text-brand-600 hover:text-brand-800">
+            <Link href={ADMIN_PATH} className="font-bold text-brand-600 hover:text-brand-800">
               Painel admin
             </Link>
           )}
