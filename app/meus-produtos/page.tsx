@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { ADMIN_PATH } from "@/lib/config";
 
 type Produto = {
   id: string;
@@ -213,11 +212,6 @@ function UserNav({ isAdmin, atual }: { isAdmin: boolean; atual?: string }) {
           >
             Conta
           </Link>
-          {isAdmin && (
-            <Link href={ADMIN_PATH} className="font-bold text-brand-600 hover:text-brand-800">
-              Painel admin
-            </Link>
-          )}
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
             className="text-neutral-600 hover:text-brand-600"

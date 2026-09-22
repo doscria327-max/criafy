@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { ADMIN_PATH } from "@/lib/config";
 
 type Produto = {
   slug: string;
@@ -177,22 +176,12 @@ export default function Dashboard() {
             <Link href="/" className="text-xl font-black">
               Cria<span className="gradient-text">fy</span>
             </Link>
-            <div className="flex items-center gap-4">
-              {(session?.user as any)?.role === "admin" && (
-                <Link
-                  href={ADMIN_PATH}
-                  className="text-sm font-bold text-brand-600 hover:text-brand-800"
-                >
-                  Painel admin
-                </Link>
-              )}
-              <button
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className="text-sm text-neutral-600 hover:text-brand-600"
-              >
-                Sair
-              </button>
-            </div>
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="text-sm text-neutral-600 hover:text-brand-600"
+            >
+              Sair
+            </button>
           </div>
         </header>
 
@@ -225,14 +214,6 @@ export default function Dashboard() {
             <Link href="/dashboard" className="text-brand-600">Criar produto</Link>
             <Link href="/meus-produtos" className="text-neutral-700 hover:text-brand-600">Meus produtos</Link>
             <Link href="/conta" className="text-neutral-700 hover:text-brand-600">Conta</Link>
-            {(session?.user as any)?.role === "admin" && (
-              <Link
-                href={ADMIN_PATH}
-                className="font-bold text-brand-600 hover:text-brand-800"
-              >
-                Painel admin
-              </Link>
-            )}
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
               className="text-neutral-600 hover:text-brand-600"

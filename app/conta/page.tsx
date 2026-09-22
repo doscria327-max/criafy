@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { ADMIN_PATH } from "@/lib/config";
 
 type ContaInfo = {
   id: string;
@@ -376,11 +375,6 @@ export function UserHeader({ isAdmin }: { isAdmin: boolean }) {
           <Link href="/conta" className="text-brand-600">
             Conta
           </Link>
-          {isAdmin && (
-            <Link href={ADMIN_PATH} className="font-bold text-brand-600 hover:text-brand-800">
-              Painel admin
-            </Link>
-          )}
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
             className="text-neutral-600 hover:text-brand-600"

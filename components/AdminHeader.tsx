@@ -31,14 +31,9 @@ export default function AdminHeader({ current }: { current?: string }) {
         <div className="flex items-center gap-6 text-sm">
           {link(adminUrl(), "dashboard", "Dashboard")}
           {link(adminUrl("/usuarios"), "usuarios", "Usuários")}
+          {link(adminUrl("/novo-usuario"), "novo-usuario", "+ Novo usuário")}
           {link(adminUrl("/pagamentos"), "pagamentos", "Pagamentos")}
           {link(adminUrl("/projetos"), "projetos", "Projetos")}
-          <Link
-            href="/dashboard"
-            className="text-neutral-600 hover:text-brand-600 text-sm"
-          >
-            Área do usuário
-          </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
             className="text-neutral-600 hover:text-brand-600 text-sm"

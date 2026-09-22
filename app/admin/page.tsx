@@ -61,13 +61,23 @@ export default async function AdminDashboard() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
+            href={adminUrl("/novo-usuario")}
+            className="p-6 bg-brand-600 text-white rounded-2xl border border-brand-700 hover:shadow-lg transition"
+          >
+            <p className="text-3xl mb-2">✨</p>
+            <h3 className="font-black text-lg mb-1">Criar novo usuário</h3>
+            <p className="text-sm text-brand-50">
+              Cadastro manual com plano ativo (mensal ou vitalício).
+            </p>
+          </Link>
+          <Link
             href={adminUrl("/usuarios")}
             className="p-6 bg-white rounded-2xl border border-neutral-200 hover:border-brand-400 hover:shadow-md transition"
           >
             <p className="text-3xl mb-2">👥</p>
             <h3 className="font-black text-lg mb-1">Usuários</h3>
             <p className="text-sm text-neutral-600">
-              Ver todos, liberar, suspender, alterar planos.
+              Ver todos, alterar planos, suspender, expiração.
             </p>
           </Link>
           <Link
@@ -87,17 +97,7 @@ export default async function AdminDashboard() {
             <p className="text-3xl mb-2">📦</p>
             <h3 className="font-black text-lg mb-1">Projetos</h3>
             <p className="text-sm text-neutral-600">
-              Produtos criados por todos os usuários.
-            </p>
-          </Link>
-          <Link
-            href={adminUrl("/usuarios?status=payment_pending")}
-            className="p-6 bg-white rounded-2xl border border-neutral-200 hover:border-brand-400 hover:shadow-md transition"
-          >
-            <p className="text-3xl mb-2">⏳</p>
-            <h3 className="font-black text-lg mb-1">Pendentes</h3>
-            <p className="text-sm text-neutral-600">
-              Quem pagou na Applyfy e precisa ser liberado.
+              Produtos criados pelos usuários.
             </p>
           </Link>
         </div>

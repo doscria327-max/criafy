@@ -15,16 +15,6 @@ export default function TelaInicial() {
         />
       </div>
 
-      {/* Admin link discreto no canto */}
-      <div className="absolute top-6 right-6 z-20">
-        <Link
-          href="/login?admin=1"
-          className="text-xs text-neutral-500 hover:text-neutral-300 transition"
-        >
-          Painel admin
-        </Link>
-      </div>
-
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-16">
         {/* Logo */}
         <div className="text-4xl md:text-5xl font-black mb-8">
