@@ -1,0 +1,171 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { prisma } from "@/lib/db";
+import { decodeProduto } from "@/lib/encoding";
+import type { Produto } from "@/lib/storage";
+import BaixarPdfBotao from "./baixar-pdf";
+
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const p = await prisma.produto.findUnique({ where: { id: params.id } });
+  if (!p) return { title: "Página não encontrada" };
+  return {
+    title: `${p.nome} — ${p.promessa}`,
+    description: p.promessa,
+  };
+}
+
+export default async function PaginaCurta({ params }: { params: { id: string } }) {
+  const produtoDb = await prisma.produto.findUnique({ where: { id: params.id } });
+  if (!produtoDb) notFound();
+
+  const p = decodeProduto(produtoDb.token) as Produto | null;
+  if (!p) notFound();
+
+  const ctaHref = produtoDb.linkCheckout && produtoDb.linkCheckout.trim()
+    ? produtoDb.linkCheckout
+    : "#comprar";
+  const ctaExterno = ctaHref.startsWith("http");
+
+  return (
+    <main className="min-h-screen bg-white">
+      {/* HERO */}
+      <section className="relative bg-neutral-950 text-white py-24 overflow-hidden">
+        <div className="absolute inset-0 gradient-bg opacity-30" />
+        <div className="relative max-w-4xl mx-auto px-6 text-center">
+          <div className="inline-block bg-brand-500/20 border border-brand-500/40 rounded-full px-4 py-1.5 text-xs font-bold text-brand-300 mb-6">
+            {p.nicho.toUpperCase()}
+          </div>
+          <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.05] mb-6">
+            {p.headline}
+          </h1>
+          <p className="text-xl text-neutral-300 mb-10 max-w-2xl mx-auto">{p.subheadline}</p>
+          <a
+            href={ctaHref}
+            {...(ctaExterno ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+            className="inline-block bg-white text-black px-10 py-5 rounded-full text-lg font-black hover:bg-neutral-100 transition"
+          >
+            QUERO AGORA — R$ {p.preco}
+          </a>
+          <p className="text-xs text-neutral-500 mt-4">{p.garantia}</p>
+        </div>
+      </section>
+
+      <section className="py-20">
+        <div className="max-w-3xl mx-auto px-6">
+          <p className="text-sm font-bold text-brand-600 uppercase tracking-widest mb-4">
+            Por que isso funciona
+          </p>
+          <div className="prose prose-lg max-w-none text-neutral-800 whitespace-pre-wrap">
+            {p.copyVendas}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 bg-neutral-50">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-black text-center mb-12">
+            O que você recebe
+          </h2>
+          <div className="space-y-3">
+            {p.estrutura.map((mod, i) => (
+              <div key={i} className="p-5 bg-white rounded-2xl border border-neutral-200 flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center font-black flex-shrink-0">
+                  {i + 1}
+                </div>
+                <p className="font-semibold text-neutral-800">{mod}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-black text-center mb-12">Benefícios reais</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {p.beneficios.map((b, i) => (
+              <div key={i} className="p-5 rounded-2xl border border-neutral-200 flex items-start gap-3">
+                <span className="text-green-500 text-xl">✓</span>
+                <p className="font-medium">{b}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {p.bonus && p.bonus.length > 0 && (
+        <section className="py-20 bg-gradient-to-br from-brand-50 to-pink-50">
+          <div className="max-w-3xl mx-auto px-6">
+            <p className="text-sm font-bold text-brand-600 uppercase tracking-widest text-center mb-3">
+              Bônus especiais
+            </p>
+            <h2 className="text-3xl md:text-4xl font-black text-center mb-12">
+              Além do curso principal, você recebe:
+            </h2>
+            <div className="space-y-4">
+              {p.bonus.map((b, i) => (
+                <div key={i} className="p-5 bg-white rounded-2xl border border-brand-200 flex items-center gap-4">
+                  <span className="text-3xl">🎁</span>
+                  <p className="font-semibold">{b}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="py-16 bg-neutral-50">
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <p className="text-sm font-bold text-neutral-500 uppercase tracking-widest mb-3">Preview</p>
+          <h3 className="text-2xl font-black mb-6">Baixe uma amostra do material</h3>
+          <BaixarPdfBotao id={produtoDb.id} slug={produtoDb.slug} />
+        </div>
+      </section>
+
+      <section id="comprar" className="py-24 bg-black text-white">
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-4xl md:text-5xl font-black mb-6">
+            Você pode continuar tentando sozinho.<br />
+            <span className="gradient-text">Ou pode começar agora.</span>
+          </h2>
+          <p className="text-xl text-neutral-400 mb-8">{p.subheadline}</p>
+          <div className="inline-block bg-white text-black rounded-3xl p-8 mb-6">
+            <div className="text-6xl font-black mb-2">R$ {p.preco}</div>
+            <p className="text-sm text-neutral-600 mb-6">Pagamento único</p>
+            <a
+              href={ctaHref}
+              {...(ctaExterno ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              className="inline-block bg-black text-white px-10 py-4 rounded-full font-black hover:bg-neutral-800"
+            >
+              QUERO ACESSO AGORA →
+            </a>
+          </div>
+          <p className="text-sm text-neutral-500">🔒 {p.garantia}</p>
+        </div>
+      </section>
+
+      <section className="py-20">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-black text-center mb-12">Perguntas frequentes</h2>
+          <div className="space-y-3">
+            {p.faq.map((f, i) => (
+              <details key={i} className="group bg-neutral-50 rounded-2xl p-6 cursor-pointer">
+                <summary className="flex justify-between items-center font-bold list-none">
+                  {f.q}
+                  <span className="text-brand-600 group-open:rotate-45 transition text-2xl">+</span>
+                </summary>
+                <p className="mt-3 text-neutral-600">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <footer className="py-10 bg-neutral-950 text-neutral-500 text-sm text-center">
+        <p className="text-xs">© {new Date().getFullYear()} · Todos os direitos reservados</p>
+      </footer>
+    </main>
+  );
+}

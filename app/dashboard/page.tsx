@@ -69,6 +69,7 @@ export default function Dashboard() {
       if (!r.ok) throw new Error(data.error || "Erro");
       setProduto(data.produto);
       setToken(data.token);
+      setProdutoId(data.produtoId || "");
       setStep(2);
     } catch (err: any) {
       setErro(err.message);
@@ -148,6 +149,7 @@ export default function Dashboard() {
   function reset() {
     setProduto(null);
     setToken("");
+    setProdutoId("");
     setNicho("");
     setPublico("");
     setLinkCheckout("");
@@ -155,7 +157,8 @@ export default function Dashboard() {
     setErro(null);
   }
 
-  const paginaUrl = token && produto ? `/produto/${produto.slug}?d=${token}` : "";
+  const [produtoId, setProdutoId] = useState<string>("");
+  const paginaUrl = produtoId ? `/p/${produtoId}` : "";
 
   // Estados de loading e sem acesso
   if (authStatus === "loading") {
@@ -288,26 +291,23 @@ export default function Dashboard() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="block font-bold mb-2">Link do checkout Applyfy</label>
-                <input
-                  type="url"
-                  value={linkCheckout}
-                  onChange={(e) => setLinkCheckout(e.target.value)}
-                  placeholder="https://checkout.applyfy.com.br/..."
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-300"
-                />
-                <div className="mt-3 p-4 rounded-xl bg-brand-50 border border-brand-200 text-sm">
-                  <p className="font-bold text-brand-900 mb-1">Ainda não tem conta Applyfy?</p>
-                  <a
-                    href="https://app.applyfy.com.br/auth/register?code=9OOX7XKB"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-brand-700 hover:underline"
-                  >
-                    Criar minha conta Applyfy grátis →
-                  </a>
-                </div>
+              <div className="p-4 rounded-xl bg-brand-50 border border-brand-200 text-sm">
+                <p className="font-bold text-brand-900 mb-2">
+                  🛒 Sobre o checkout do seu produto
+                </p>
+                <p className="text-brand-800 mb-2">
+                  Depois de criar o produto, vai em <b>Meus produtos</b> pra colar
+                  o link do checkout Applyfy dele. Assim os botões da página
+                  de vendas redirecionam pra o pagamento real.
+                </p>
+                <a
+                  href="https://app.applyfy.com.br/auth/register?code=9OOX7XKB"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-brand-700 hover:underline text-xs"
+                >
+                  Ainda não tem conta Applyfy? Criar grátis →
+                </a>
               </div>
               <button
                 type="submit"
@@ -369,13 +369,63 @@ export default function Dashboard() {
             <div className="mb-6 flex items-center gap-2 text-green-700 font-semibold">
               <span className="text-2xl">✓</span> {produto.grupos.length} grupos encontrados
             </div>
-            <h1 className="text-4xl font-black mb-8">Onde seu público está</h1>
+            <h1 className="text-4xl font-black mb-3">Onde seu público está</h1>
+            <p className="text-neutral-600 mb-6">
+              Comunidades sugeridas pro seu nicho. Clique pra abrir o grupo em
+              uma nova aba.
+            </p>
+
+            <div className="mb-6 p-4 rounded-2xl bg-yellow-50 border border-yellow-200 text-sm text-yellow-900">
+              <p className="font-bold mb-1">⚠️ Confira antes de postar</p>
+              <p>
+                Alguns grupos podem ter fechado ou mudado de link. Sempre valide se
+                o grupo existe e leia as regras de divulgação antes de postar.
+              </p>
+            </div>
+
             <div className="space-y-3 mb-8">
               {produto.grupos.map((g, i) => (
-                <div key={i} className="p-5 bg-white rounded-2xl border border-neutral-200">
-                  <p className="text-xs font-bold text-brand-700 mb-1">{g.plataforma}</p>
+                <div
+                  key={i}
+                  className="p-5 bg-white rounded-2xl border border-neutral-200 hover:border-brand-300 transition"
+                >
+                  <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">
+                        {g.plataforma}
+                      </span>
+                      <RiscoBadge risco={g.risco} />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(g.link);
+                          alert("Link copiado!");
+                        }}
+                        className="text-xs font-bold px-3 py-1 rounded-full bg-neutral-100 hover:bg-neutral-200"
+                      >
+                        Copiar
+                      </button>
+                      <a
+                        href={g.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold px-3 py-1 rounded-full bg-black text-white hover:bg-neutral-800"
+                      >
+                        Abrir →
+                      </a>
+                    </div>
+                  </div>
                   <p className="font-bold">{g.nome}</p>
-                  <p className="text-xs text-neutral-600 mt-2">{g.motivo}</p>
+                  <a
+                    href={g.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-brand-600 font-mono break-all mt-1 hover:underline block"
+                  >
+                    {g.link}
+                  </a>
+                  <p className="text-xs text-neutral-600 mt-2 italic">{g.motivo}</p>
                 </div>
               ))}
             </div>
@@ -441,6 +491,22 @@ export default function Dashboard() {
         )}
       </div>
     </main>
+  );
+}
+
+function RiscoBadge({ risco }: { risco: string }) {
+  const lower = (risco || "").toLowerCase();
+  const nivel = lower.startsWith("baixo")
+    ? { label: "Baixo risco", color: "bg-green-100 text-green-700" }
+    : lower.startsWith("medio") || lower.startsWith("médio")
+    ? { label: "Médio risco", color: "bg-yellow-100 text-yellow-700" }
+    : lower.startsWith("alto")
+    ? { label: "Alto risco", color: "bg-red-100 text-red-700" }
+    : { label: risco || "?", color: "bg-neutral-100 text-neutral-700" };
+  return (
+    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${nivel.color}`}>
+      {nivel.label}
+    </span>
   );
 }
 

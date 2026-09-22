@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     const token = encodeProduto(produto);
 
     // Salva no banco
-    await prisma.produto.create({
+    const saved = await prisma.produto.create({
       data: {
         userId: user.id,
         slug: produto.slug,
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ produto, token });
+    return NextResponse.json({ produto, token, produtoId: saved.id });
   } catch (err: any) {
     console.error("criar-produto:", err);
     return NextResponse.json({ error: err.message || "Erro interno" }, { status: 500 });

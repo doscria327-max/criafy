@@ -78,7 +78,7 @@ export default async function ProjetosPage() {
                     </td>
                     <td className="px-4 py-3 text-right space-x-3">
                       <Link
-                        href={`/produto/${p.slug}?d=${p.token}`}
+                        href={`/p/${p.id}`}
                         target="_blank"
                         className="text-brand-600 font-semibold hover:underline text-xs"
                       >

@@ -7,30 +7,24 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// Paleta Criafy + acento do nicho
-const CRIAFY_ROXO = "#7c3aed";
-const CRIAFY_ROXO_ESCURO = "#5b21b6";
-const CRIAFY_PINK = "#ec4899";
-const CRIAFY_ROXO_CLARO = "#ede9fe";
-const CRIAFY_50 = "#f5f3ff";
-const DARK = "#0f0f14";
-const TEXT_800 = "#27272a";
-const TEXT_600 = "#525252";
-const TEXT_400 = "#a3a3a3";
-const WHITE = "#ffffff";
-const GREEN = "#10b981";
+// Paleta neutra tipo livro impresso
+const INK = "#1a1a1a";
+const INK_SOFT = "#3a3a3a";
+const GRAY = "#767676";
+const GRAY_LIGHT = "#c8c8c8";
+const CREAM = "#faf7f2";
+const ACCENT = "#7c3aed"; // usada só em detalhes discretos
 
-// Cores por nicho (acento da capa)
 const CORES_NICHO: Record<string, string> = {
-  emagrecimento: "#ef4444",
-  financas: "#10b981",
-  relacionamento: "#ec4899",
-  carreira: "#3b82f6",
-  marketing: "#8b5cf6",
-  espiritualidade: "#a78bfa",
-  culinaria: "#f97316",
-  estudos: "#2563eb",
-  generico: "#7c3aed",
+  emagrecimento: "#c0392b",
+  financas: "#0f766e",
+  relacionamento: "#be185d",
+  carreira: "#1e40af",
+  marketing: "#5b21b6",
+  espiritualidade: "#6d28d9",
+  culinaria: "#c2410c",
+  estudos: "#1e3a8a",
+  generico: "#1a1a1a",
 };
 
 export async function POST(req: NextRequest) {
@@ -44,15 +38,15 @@ export async function POST(req: NextRequest) {
     }
 
     const nicho = encontrarNicho(produto.nicho);
-    const corNicho = CORES_NICHO[nicho.id] || CRIAFY_ROXO;
+    const corNicho = CORES_NICHO[nicho.id] || INK;
 
     const buffer: Buffer = await new Promise((resolve, reject) => {
       const doc = new PDFDocument({
-        size: "A4",
-        margins: { top: 60, bottom: 60, left: 60, right: 60 },
+        size: "A5", // formato de livro
+        margins: { top: 72, bottom: 72, left: 60, right: 60 },
         info: {
           Title: produto.nome,
-          Author: "Criafy",
+          Author: produto.publico,
           Subject: produto.promessa,
           Keywords: produto.nicho,
         },
@@ -69,419 +63,314 @@ export async function POST(req: NextRequest) {
       const MARGIN = 60;
       const CONTENT_W = PAGE_W - MARGIN * 2;
 
-      // ========== HELPERS DE DESENHO ==========
-      function fundoGradient(cor1: string, cor2: string) {
-        const steps = 40;
-        for (let i = 0; i < steps; i++) {
-          const t = i / steps;
-          const c = misturar(cor1, cor2, t);
-          doc.rect(0, (PAGE_H / steps) * i, PAGE_W, PAGE_H / steps + 1).fillColor(c).fill();
-        }
+      // ===== HELPERS =====
+      function ornamento(y: number) {
+        // Divisor ornamental estilo livro
+        const cx = PAGE_W / 2;
+        doc.strokeColor(corNicho).lineWidth(0.6);
+        doc.moveTo(cx - 45, y).lineTo(cx - 10, y).stroke();
+        doc.moveTo(cx + 10, y).lineTo(cx + 45, y).stroke();
+        // diamante central
+        doc.fillColor(corNicho);
+        doc.polygon([cx, y - 3], [cx + 3, y], [cx, y + 3], [cx - 3, y]).fill();
       }
 
-      function misturar(hex1: string, hex2: string, t: number): string {
-        const p1 = parseInt(hex1.slice(1), 16);
-        const p2 = parseInt(hex2.slice(1), 16);
-        const r1 = (p1 >> 16) & 0xff, g1 = (p1 >> 8) & 0xff, b1 = p1 & 0xff;
-        const r2 = (p2 >> 16) & 0xff, g2 = (p2 >> 8) & 0xff, b2 = p2 & 0xff;
-        const r = Math.round(r1 + (r2 - r1) * t);
-        const g = Math.round(g1 + (g2 - g1) * t);
-        const b = Math.round(b1 + (b2 - b1) * t);
-        return "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+      function dropCap(letter: string, x: number, y: number, cor: string) {
+        // Letra capitular grande
+        doc.fillColor(cor).font("Helvetica-Bold").fontSize(46);
+        doc.text(letter, x, y - 6, { lineBreak: false, width: 40 });
       }
 
-      function badge(x: number, y: number, num: number, cor: string, size = 60) {
-        doc.circle(x + size / 2, y + size / 2, size / 2).fillColor(cor).fill();
-        doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(24);
-        const s = String(num);
-        const w = doc.widthOfString(s);
-        doc.text(s, x + size / 2 - w / 2, y + size / 2 - 12, { lineBreak: false });
+      function corner(y: number) {
+        // Ornamento nos cantos das páginas de capítulo
+        doc.strokeColor(GRAY_LIGHT).lineWidth(0.3);
+        doc.moveTo(MARGIN, y).lineTo(MARGIN + 20, y).stroke();
+        doc.moveTo(PAGE_W - MARGIN - 20, y).lineTo(PAGE_W - MARGIN, y).stroke();
       }
 
-      function barraLateral(cor: string) {
-        doc.rect(0, 0, 8, PAGE_H).fillColor(cor).fill();
-      }
-
-      function callout(texto: string, opts: {
-        titulo?: string;
-        fundo?: string;
-        borda?: string;
-        cor?: string;
-        largura?: number;
-      } = {}) {
-        const largura = opts.largura || CONTENT_W;
-        const yStart = doc.y;
-        const paddingH = 20;
-        const paddingV = 16;
-
-        // calcula altura
-        doc.fillColor(opts.cor || DARK).font("Helvetica").fontSize(11);
-        const altTexto = doc.heightOfString(texto, {
-          width: largura - paddingH * 2 - 4,
-          align: "left",
+      function footer(paginaAtual: number, total: number) {
+        // Só nas páginas de conteúdo, número da página estilo livro
+        const y = PAGE_H - 40;
+        doc.fillColor(GRAY).font("Helvetica").fontSize(9);
+        doc.text(`${paginaAtual}`, MARGIN, y, {
+          width: CONTENT_W,
+          align: "center",
+          lineBreak: false,
         });
-        const altTitulo = opts.titulo ? 18 : 0;
-        const alt = altTexto + altTitulo + paddingV * 2;
-
-        // caixa
-        doc.roundedRect(MARGIN, yStart, largura, alt, 12)
-           .fillColor(opts.fundo || CRIAFY_ROXO_CLARO).fill();
-        // barra
-        doc.rect(MARGIN, yStart, 4, alt).fillColor(opts.borda || CRIAFY_ROXO).fill();
-
-        // conteúdo
-        if (opts.titulo) {
-          doc.fillColor(opts.borda || CRIAFY_ROXO).font("Helvetica-Bold").fontSize(9)
-             .text(opts.titulo.toUpperCase(), MARGIN + paddingH, yStart + paddingV, {
-               width: largura - paddingH * 2,
-             });
-        }
-        doc.fillColor(opts.cor || DARK).font("Helvetica").fontSize(11)
-           .text(texto, MARGIN + paddingH, yStart + paddingV + altTitulo, {
-             width: largura - paddingH * 2 - 4,
-             align: "left",
-             lineGap: 3,
-           });
-
-        doc.y = yStart + alt + 10;
       }
 
-      function divisor(cor: string, largura = 60, altura = 4) {
-        const y = doc.y;
-        doc.rect(MARGIN, y, largura, altura).fillColor(cor).fill();
-        doc.y = y + altura + 10;
-      }
-
-      function footer(paginaAtual: number) {
-        const y = PAGE_H - 30;
-        doc.strokeColor("#e5e5e5").lineWidth(0.5)
-           .moveTo(MARGIN, y - 8).lineTo(PAGE_W - MARGIN, y - 8).stroke();
-        doc.fillColor(TEXT_400).font("Helvetica").fontSize(8);
-        doc.text(produto.nome.toUpperCase(), MARGIN, y, {
-          lineBreak: false, width: 200,
+      function textoJustificado(
+        txt: string,
+        opts: { fontSize?: number; leading?: number; indent?: number; align?: any } = {}
+      ) {
+        doc.fillColor(INK).font("Helvetica").fontSize(opts.fontSize || 11);
+        doc.text(txt, {
+          width: CONTENT_W,
+          align: opts.align || "justify",
+          lineGap: opts.leading || 3,
+          indent: opts.indent ?? 20,
         });
-        doc.fillColor(DARK).font("Helvetica-Bold").fontSize(8)
-           .text("criafy.site", 0, y, { align: "center", lineBreak: false });
-        doc.fillColor(TEXT_400).font("Helvetica").fontSize(8)
-           .text(String(paginaAtual), PAGE_W - MARGIN - 20, y, {
-             lineBreak: false, width: 20, align: "right",
-           });
       }
 
-      // ========== 1. CAPA ==========
-      fundoGradient(CRIAFY_ROXO, corNicho);
-      doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(11);
-      doc.text("EBOOK EXCLUSIVO · CRIAFY", MARGIN, 120, {
-        width: CONTENT_W, align: "center", characterSpacing: 2,
+      // ===== 1. CAPA (elegante, sem menção a nenhuma marca) =====
+      // Moldura ornamental
+      doc.strokeColor(corNicho).lineWidth(0.6);
+      doc.rect(30, 30, PAGE_W - 60, PAGE_H - 60).stroke();
+      doc.strokeColor(corNicho).lineWidth(0.3);
+      doc.rect(36, 36, PAGE_W - 72, PAGE_H - 72).stroke();
+
+      // Nicho pequeno topo
+      doc.fillColor(corNicho).font("Helvetica-Bold").fontSize(9);
+      doc.text(produto.nicho.toUpperCase(), MARGIN, 80, {
+        width: CONTENT_W,
+        align: "center",
+        characterSpacing: 4,
       });
 
-      // Faixa branca com nicho
-      const faixaY = 170;
-      doc.roundedRect(PAGE_W / 2 - 90, faixaY, 180, 26, 13)
-         .fillColor(WHITE).fill();
-      doc.fillColor(corNicho).font("Helvetica-Bold").fontSize(10)
-         .text(produto.nicho.toUpperCase(), PAGE_W / 2 - 90, faixaY + 9, {
-           width: 180, align: "center", characterSpacing: 1,
-         });
+      // Ornamento
+      ornamento(100);
 
       // Título principal
-      doc.fillColor(WHITE).font("Helvetica-Bold").fontSize(44);
-      doc.text(produto.nome, MARGIN, 240, {
-        width: CONTENT_W, align: "center", lineGap: -6,
+      doc.fillColor(INK).font("Helvetica-Bold").fontSize(28);
+      doc.text(produto.nome, MARGIN, PAGE_H / 2 - 90, {
+        width: CONTENT_W,
+        align: "center",
+        lineGap: -3,
       });
 
-      // Promessa
+      // Subtítulo (promessa)
       doc.moveDown(1);
-      doc.fillColor(WHITE).font("Helvetica").fontSize(16);
+      doc.fillColor(INK_SOFT).font("Helvetica-Oblique").fontSize(12);
       doc.text(produto.promessa, MARGIN, doc.y, {
-        width: CONTENT_W, align: "center", lineGap: 4,
+        width: CONTENT_W,
+        align: "center",
+        lineGap: 4,
       });
 
-      // Público
-      doc.fillColor("#ffffff").fillOpacity(0.7);
-      doc.font("Helvetica").fontSize(10);
-      doc.text("Um guia prático pra:", MARGIN, PAGE_H - 200, {
-        width: CONTENT_W, align: "center",
-      });
-      doc.fillOpacity(1).fillColor(WHITE).font("Helvetica-Bold").fontSize(12);
-      doc.text(produto.publico, MARGIN, doc.y + 4, {
-        width: CONTENT_W, align: "center",
-      });
+      // Ornamento inferior
+      ornamento(PAGE_H - 130);
 
-      // Rodapé da capa
-      doc.fillColor(WHITE).fillOpacity(0.8).font("Helvetica-Bold").fontSize(14);
-      doc.text("criafy.site", MARGIN, PAGE_H - 90, {
-        width: CONTENT_W, align: "center",
+      // Para (público)
+      doc.fillColor(GRAY).font("Helvetica").fontSize(9);
+      doc.text("um guia para", MARGIN, PAGE_H - 110, {
+        width: CONTENT_W,
+        align: "center",
+        characterSpacing: 2,
       });
-      doc.fillOpacity(0.6).font("Helvetica").fontSize(9);
-      doc.text("© " + new Date().getFullYear() + " · Feito com Criafy", MARGIN, PAGE_H - 65, {
-        width: CONTENT_W, align: "center",
-      });
-      doc.fillOpacity(1);
-
-      // ========== 2. APRESENTAÇÃO ==========
-      doc.addPage();
-      doc.fillColor(CRIAFY_ROXO).font("Helvetica-Bold").fontSize(10);
-      doc.text("APRESENTAÇÃO", MARGIN, MARGIN, {
-        width: CONTENT_W, characterSpacing: 2,
-      });
-      doc.moveDown(0.6);
-      doc.fillColor(DARK).font("Helvetica-Bold").fontSize(30);
-      doc.text("Antes de começar", MARGIN, doc.y, { width: CONTENT_W });
       doc.moveDown(0.3);
-      divisor(CRIAFY_ROXO, 80, 4);
+      doc.fillColor(INK).font("Helvetica").fontSize(10);
+      doc.text(produto.publico, MARGIN, doc.y, {
+        width: CONTENT_W,
+        align: "center",
+      });
 
-      doc.fillColor(TEXT_600).font("Helvetica").fontSize(13);
-      doc.text(
-        `Se você chegou aqui, provavelmente já se perguntou se ${produto.publico.toLowerCase()} é mesmo você. E se a resposta pra sua situação existe.`,
-        MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 5 }
-      );
-      doc.moveDown(0.7);
+      // ===== 2. FOLHA DE ROSTO =====
+      doc.addPage();
+      doc.moveDown(6);
+      doc.fillColor(INK).font("Helvetica-Bold").fontSize(20);
+      doc.text(produto.nome, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+      doc.moveDown(0.5);
+      doc.fillColor(INK_SOFT).font("Helvetica-Oblique").fontSize(11);
+      doc.text(produto.promessa, MARGIN, doc.y, {
+        width: CONTENT_W,
+        align: "center",
+      });
+      doc.moveDown(10);
+      doc.fillColor(GRAY).font("Helvetica").fontSize(8);
+      doc.text("Primeira edição", MARGIN, doc.y, {
+        width: CONTENT_W,
+        align: "center",
+        characterSpacing: 1,
+      });
 
-      doc.fillColor(TEXT_800).font("Helvetica").fontSize(11);
+      // ===== 3. DEDICATÓRIA =====
+      doc.addPage();
+      doc.moveDown(10);
+      doc.fillColor(INK_SOFT).font("Helvetica-Oblique").fontSize(11);
       doc.text(
-        produto.copyVendas,
-        MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 4 }
+        `Para você,\nque decidiu que hoje era o dia certo\npara começar.`,
+        MARGIN, doc.y,
+        { width: CONTENT_W, align: "center", lineGap: 6 }
       );
+
+      // ===== 4. SUMÁRIO =====
+      doc.addPage();
+      corner(50);
+      doc.moveDown(2);
+      doc.fillColor(INK).font("Helvetica-Bold").fontSize(20);
+      doc.text("Sumário", MARGIN, doc.y, { width: CONTENT_W });
+      doc.moveDown(0.5);
+      ornamento(doc.y);
       doc.moveDown(1);
 
-      callout(
-        `Este material foi feito pra ir direto ao ponto. Sem enrolação, sem discurso motivacional vazio. Se você aplicar o que tá aqui dentro nos próximos ${produto.nicho.toLowerCase().includes("estud") ? "30" : "30"} dias, você vai enxergar uma mudança concreta na sua realidade.`,
-        {
-          titulo: "Uma promessa honesta",
-          fundo: CRIAFY_50,
-          borda: CRIAFY_ROXO,
-        }
-      );
-
-      // ========== 3. SUMÁRIO ==========
-      doc.addPage();
-      doc.fillColor(CRIAFY_ROXO).font("Helvetica-Bold").fontSize(10)
-         .text("SUMÁRIO", MARGIN, MARGIN, { width: CONTENT_W, characterSpacing: 2 });
-      doc.moveDown(0.6);
-      doc.fillColor(DARK).font("Helvetica-Bold").fontSize(32)
-         .text("O que você vai aprender", MARGIN, doc.y, { width: CONTENT_W });
-      doc.moveDown(0.3);
-      divisor(CRIAFY_ROXO, 80, 4);
-      doc.moveDown(0.5);
-
-      nicho.capitulosPdf.forEach((cap, i) => {
-        const y = doc.y;
-        doc.fillColor(CRIAFY_ROXO).font("Helvetica-Bold").fontSize(14);
-        doc.text(`${String(i + 1).padStart(2, "0")}`, MARGIN, y, {
-          width: 40, lineBreak: false,
-        });
-        doc.fillColor(DARK).font("Helvetica-Bold").fontSize(13);
-        doc.text(cap.titulo, MARGIN + 40, y, {
-          width: CONTENT_W - 40, lineGap: 2,
-        });
+      doc.fillColor(INK_SOFT).font("Helvetica").fontSize(10);
+      const capitulos = [
+        { titulo: "Introdução" },
+        ...nicho.capitulosPdf,
+        { titulo: "Fechamento" },
+      ];
+      capitulos.forEach((cap, i) => {
         doc.moveDown(0.4);
+        doc.fillColor(corNicho).text(`${String(i + 1).padStart(2, "0")}`, MARGIN, doc.y, {
+          continued: true,
+          width: 40,
+        });
+        doc.fillColor(INK).text(`  ${cap.titulo}`, { width: CONTENT_W - 40 });
       });
 
-      // Adicional
+      // ===== 5. INTRODUÇÃO =====
+      doc.addPage();
+      corner(50);
+      doc.moveDown(2);
+      doc.fillColor(GRAY).font("Helvetica").fontSize(8);
+      doc.text("01", MARGIN, doc.y, { width: CONTENT_W, align: "center", characterSpacing: 3 });
       doc.moveDown(0.3);
-      const idxExtra = nicho.capitulosPdf.length + 1;
-      doc.fillColor(CRIAFY_ROXO).font("Helvetica-Bold").fontSize(14)
-         .text(`${String(idxExtra).padStart(2, "0")}`, MARGIN, doc.y, {
-           width: 40, lineBreak: false,
-         });
-      doc.fillColor(DARK).font("Helvetica-Bold").fontSize(13)
-         .text("Próximos passos", MARGIN + 40, doc.y);
+      doc.fillColor(INK).font("Helvetica-Bold").fontSize(18);
+      doc.text("Introdução", MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+      doc.moveDown(0.5);
+      ornamento(doc.y);
+      doc.moveDown(1.5);
 
-      // ========== 4. CAPÍTULOS ==========
-      nicho.capitulosPdf.forEach((cap, idx) => {
+      // Introdução com drop cap
+      const introTexto1 = produto.copyVendas;
+      const letra1 = introTexto1.charAt(0).toUpperCase();
+      const restoIntro1 = introTexto1.slice(1);
+
+      const startYintro = doc.y;
+      dropCap(letra1, MARGIN, startYintro, corNicho);
+      doc.fillColor(INK).font("Helvetica").fontSize(11);
+      doc.text(restoIntro1, MARGIN + 34, startYintro + 4, {
+        width: CONTENT_W - 34,
+        align: "justify",
+        lineGap: 3,
+      });
+
+      doc.moveDown(1);
+      textoJustificado(
+        `Este material foi escrito para quem já experimentou vários caminhos e ainda não encontrou o método certo. Cada capítulo aborda uma etapa específica dessa jornada, com exemplos práticos, reflexões e passos concretos que você pode aplicar ainda esta semana.`
+      );
+      doc.moveDown(0.5);
+      textoJustificado(
+        `Não é um manual teórico. É um roteiro. Se você aplicar o que está aqui dentro, vai enxergar uma mudança concreta na sua realidade em pouco tempo. A garantia disso não está no papel. Está na sua disposição de fazer diferente.`
+      );
+
+      // ===== 6. CAPÍTULOS =====
+      const capitulosData = nicho.capitulosPdf;
+      capitulosData.forEach((cap, idx) => {
         doc.addPage();
-        barraLateral(corNicho);
+        corner(50);
+        doc.moveDown(2);
 
-        // "Capítulo N"
-        doc.fillColor(corNicho).font("Helvetica-Bold").fontSize(10);
-        doc.text(`CAPÍTULO ${String(idx + 1).padStart(2, "0")}`, MARGIN, MARGIN, {
-          width: CONTENT_W, characterSpacing: 2,
+        // Número
+        doc.fillColor(GRAY).font("Helvetica").fontSize(8);
+        doc.text(String(idx + 2).padStart(2, "0"), MARGIN, doc.y, {
+          width: CONTENT_W,
+          align: "center",
+          characterSpacing: 3,
         });
-        doc.moveDown(0.5);
+        doc.moveDown(0.3);
 
         // Título
-        doc.fillColor(DARK).font("Helvetica-Bold").fontSize(26);
-        doc.text(cap.titulo, MARGIN, doc.y, { width: CONTENT_W, lineGap: -2 });
-        doc.moveDown(0.4);
-
-        divisor(corNicho, 60, 4);
+        doc.fillColor(INK).font("Helvetica-Bold").fontSize(18);
+        doc.text(cap.titulo, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
         doc.moveDown(0.5);
+        ornamento(doc.y);
+        doc.moveDown(1.5);
 
-        // Parágrafos
-        cap.paragrafos.forEach((p, pIdx) => {
-          if (pIdx === 0) {
-            // Primeiro parágrafo em destaque
-            doc.fillColor(TEXT_600).font("Helvetica").fontSize(13);
-            doc.text(p, MARGIN, doc.y, {
-              width: CONTENT_W, align: "justify", lineGap: 5,
-            });
-          } else {
-            doc.fillColor(TEXT_800).font("Helvetica").fontSize(11.5);
-            doc.text(p, MARGIN, doc.y, {
-              width: CONTENT_W, align: "justify", lineGap: 4,
-            });
-          }
-          doc.moveDown(0.8);
+        // Primeiro parágrafo com drop cap
+        const primeiro = cap.paragrafos[0];
+        const letra = primeiro.charAt(0).toUpperCase();
+        const resto = primeiro.slice(1);
+        const startY = doc.y;
+        dropCap(letra, MARGIN, startY, corNicho);
+        doc.fillColor(INK).font("Helvetica").fontSize(11);
+        doc.text(resto, MARGIN + 34, startY + 4, {
+          width: CONTENT_W - 34,
+          align: "justify",
+          lineGap: 3,
         });
 
-        // Callout de reflexão a cada capítulo
-        if (idx < nicho.capitulosPdf.length - 1) {
-          if (doc.y < PAGE_H - 180) {
+        doc.moveDown(1);
+
+        // Demais parágrafos
+        cap.paragrafos.slice(1).forEach((p, pIdx) => {
+          textoJustificado(p);
+          doc.moveDown(0.6);
+
+          // Quote destacado no meio do capítulo
+          if (pIdx === 0 && idx < capitulosData.length - 1) {
+            const angulo = nicho.angulosCopy[(idx + pIdx) % nicho.angulosCopy.length];
             doc.moveDown(0.5);
-            const reflex = nicho.angulosCopy[idx % nicho.angulosCopy.length];
-            callout(reflex, {
-              titulo: "Pra pensar",
-              fundo: WHITE,
-              borda: corNicho,
-              cor: DARK,
+            const qY = doc.y;
+            // Linha vertical
+            doc.strokeColor(corNicho).lineWidth(2);
+            doc.moveTo(MARGIN + 20, qY).lineTo(MARGIN + 20, qY + 55).stroke();
+            // Texto do quote
+            doc.fillColor(INK_SOFT).font("Helvetica-Oblique").fontSize(12);
+            doc.text(`"${angulo}"`, MARGIN + 35, qY, {
+              width: CONTENT_W - 35,
+              align: "left",
+              lineGap: 4,
             });
+            doc.moveDown(1);
           }
-        }
-      });
-
-      // ========== 5. BENEFÍCIOS + BÔNUS ==========
-      doc.addPage();
-      barraLateral(CRIAFY_ROXO);
-      doc.fillColor(CRIAFY_ROXO).font("Helvetica-Bold").fontSize(10)
-         .text("O QUE VOCÊ LEVA", MARGIN, MARGIN, {
-           width: CONTENT_W, characterSpacing: 2,
-         });
-      doc.moveDown(0.5);
-      doc.fillColor(DARK).font("Helvetica-Bold").fontSize(28)
-         .text("Recursos incluídos", MARGIN, doc.y, { width: CONTENT_W });
-      doc.moveDown(0.3);
-      divisor(CRIAFY_ROXO, 60, 4);
-      doc.moveDown(0.5);
-
-      doc.fillColor(DARK).font("Helvetica-Bold").fontSize(16)
-         .text("Benefícios", MARGIN, doc.y, { width: CONTENT_W });
-      doc.moveDown(0.4);
-
-      produto.beneficios.forEach((b, i) => {
-        const y = doc.y;
-        doc.fillColor(GREEN).font("Helvetica-Bold").fontSize(13)
-           .text("✓", MARGIN, y, { width: 20, lineBreak: false });
-        doc.fillColor(TEXT_800).font("Helvetica").fontSize(11)
-           .text(b, MARGIN + 20, y, { width: CONTENT_W - 20, lineGap: 3 });
-        doc.moveDown(0.4);
-      });
-
-      if (produto.bonus && produto.bonus.length > 0) {
-        doc.moveDown(0.6);
-        doc.fillColor(DARK).font("Helvetica-Bold").fontSize(16)
-           .text("Bônus especiais", MARGIN, doc.y, { width: CONTENT_W });
-        doc.moveDown(0.4);
-
-        produto.bonus.forEach((b) => {
-          const yStart = doc.y;
-          const alt = doc.heightOfString(b, { width: CONTENT_W - 44 }) + 24;
-          doc.roundedRect(MARGIN, yStart, CONTENT_W, alt, 10)
-             .fillColor(CRIAFY_50).fill();
-          doc.rect(MARGIN, yStart, 4, alt).fillColor(CRIAFY_PINK).fill();
-          doc.fillColor(CRIAFY_PINK).font("Helvetica-Bold").fontSize(14)
-             .text("🎁", MARGIN + 14, yStart + 8, { lineBreak: false });
-          doc.fillColor(DARK).font("Helvetica").fontSize(11)
-             .text(b, MARGIN + 40, yStart + 12, {
-               width: CONTENT_W - 44, lineGap: 3,
-             });
-          doc.y = yStart + alt + 8;
         });
-      }
+      });
 
-      // ========== 6. PRÓXIMOS PASSOS ==========
+      // ===== 7. FECHAMENTO =====
       doc.addPage();
-      barraLateral(CRIAFY_ROXO);
-      doc.fillColor(CRIAFY_ROXO).font("Helvetica-Bold").fontSize(10)
-         .text("CONCLUSÃO", MARGIN, MARGIN, {
-           width: CONTENT_W, characterSpacing: 2,
-         });
-      doc.moveDown(0.5);
-      doc.fillColor(DARK).font("Helvetica-Bold").fontSize(30)
-         .text("Próximos passos", MARGIN, doc.y, { width: CONTENT_W });
-      doc.moveDown(0.3);
-      divisor(CRIAFY_ROXO, 80, 4);
-      doc.moveDown(0.4);
-
-      doc.fillColor(TEXT_600).font("Helvetica").fontSize(13);
-      doc.text(
-        "Você chegou ao fim do guia. Agora vem o que separa quem lê de quem transforma: a ação. Muita gente lê material assim, guarda no drive e nunca aplica. Não seja essa pessoa.",
-        MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 5 }
-      );
-      doc.moveDown(0.8);
-
-      doc.fillColor(DARK).font("Helvetica-Bold").fontSize(18)
-         .text("Seus 3 primeiros passos", MARGIN, doc.y, { width: CONTENT_W });
-      doc.moveDown(0.5);
-
-      const passos = produto.beneficios.slice(0, 3);
-      passos.forEach((p, i) => {
-        const y = doc.y;
-        badge(MARGIN, y, i + 1, CRIAFY_ROXO, 32);
-        doc.fillColor(DARK).font("Helvetica-Bold").fontSize(13)
-           .text(p, MARGIN + 48, y + 4, { width: CONTENT_W - 48, lineGap: 3 });
-        doc.y = Math.max(doc.y, y + 40);
-        doc.moveDown(0.4);
-      });
-      doc.moveDown(0.8);
-
-      callout(
-        "Escolha 1 passo pra fazer nos próximos 24 horas. Não os três — só um. Feito é melhor que perfeito. E consistência bate ousadia.",
-        {
-          titulo: "Uma regra pra fechar",
-          fundo: DARK,
-          borda: CRIAFY_PINK,
-          cor: WHITE,
-        }
-      );
-
-      // ========== 7. CRÉDITOS ==========
-      doc.addPage();
-      fundoGradient(CRIAFY_ROXO_ESCURO, CRIAFY_ROXO);
-
-      doc.fillColor(WHITE).fillOpacity(0.7).font("Helvetica").fontSize(12);
-      doc.text("Feito com carinho por", MARGIN, PAGE_H / 2 - 100, {
-        width: CONTENT_W, align: "center",
-      });
-      doc.fillOpacity(1).fillColor(WHITE).font("Helvetica-Bold").fontSize(36);
-      doc.text("Criafy", MARGIN, PAGE_H / 2 - 70, {
-        width: CONTENT_W, align: "center",
-      });
-
-      doc.moveDown(1);
-      doc.fillColor(WHITE).font("Helvetica").fontSize(12);
-      doc.text(
-        "A gente acredita que qualquer pessoa deveria conseguir criar seu próprio produto digital, vender online e viver disso — sem depender de programador, agência ou orçamento gordo.",
-        MARGIN + 40, doc.y, {
-          width: CONTENT_W - 80, align: "center", lineGap: 4,
-        }
-      );
-
+      corner(50);
       doc.moveDown(2);
-      doc.fillOpacity(0.85);
-      doc.font("Helvetica-Oblique").fontSize(14);
-      doc.text('"Da ideia à venda em minutos."', MARGIN, doc.y, {
-        width: CONTENT_W, align: "center",
+      doc.fillColor(GRAY).font("Helvetica").fontSize(8);
+      doc.text(String(capitulosData.length + 2).padStart(2, "0"), MARGIN, doc.y, {
+        width: CONTENT_W,
+        align: "center",
+        characterSpacing: 3,
       });
-      doc.fillOpacity(1);
+      doc.moveDown(0.3);
+      doc.fillColor(INK).font("Helvetica-Bold").fontSize(18);
+      doc.text("Fechamento", MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+      doc.moveDown(0.5);
+      ornamento(doc.y);
+      doc.moveDown(1.5);
 
-      doc.font("Helvetica-Bold").fontSize(18);
-      doc.text("criafy.site", MARGIN, PAGE_H - 130, {
-        width: CONTENT_W, align: "center",
+      const fecha = `Você chegou até o fim. Isso, por si só, já é diferente. A maior parte das pessoas para no meio do caminho — para com uma promessa engavetada, um método que não experimentou, uma decisão que não tomou.`;
+      const letra2 = fecha.charAt(0).toUpperCase();
+      const rf = fecha.slice(1);
+      const sy = doc.y;
+      dropCap(letra2, MARGIN, sy, corNicho);
+      doc.fillColor(INK).font("Helvetica").fontSize(11);
+      doc.text(rf, MARGIN + 34, sy + 4, {
+        width: CONTENT_W - 34,
+        align: "justify",
+        lineGap: 3,
       });
+      doc.moveDown(1);
 
-      doc.fillOpacity(0.6).font("Helvetica").fontSize(9);
-      doc.text(
-        `© ${new Date().getFullYear()} Criafy · Todos os direitos reservados\nEste material foi gerado especialmente para ${produto.publico}`,
-        MARGIN, PAGE_H - 90, { width: CONTENT_W, align: "center", lineGap: 3 }
+      textoJustificado(
+        `Agora vem a parte mais importante: escolher uma coisa deste material — uma só — e colocar em prática nos próximos sete dias. Não tudo. Uma. E se comprometa com ela.`
       );
-      doc.fillOpacity(1);
+      doc.moveDown(0.5);
+      textoJustificado(
+        `Consistência bate ousadia. Um passo por dia, todo dia, chega mais longe do que uma corrida esporádica que se apaga na primeira dificuldade.`
+      );
+      doc.moveDown(0.5);
+      textoJustificado(
+        `A partir daqui, o caminho é seu. Boa jornada.`
+      );
 
-      // ========== ADICIONAR RODAPÉ EM TODAS AS PÁGINAS DE CONTEÚDO ==========
-      const totalPaginas = doc.bufferedPageRange().count;
-      for (let i = 1; i < totalPaginas - 1; i++) {
+      doc.moveDown(3);
+      ornamento(doc.y);
+      doc.moveDown(1);
+      doc.fillColor(GRAY).font("Helvetica-Oblique").fontSize(9);
+      doc.text("— Fim —", MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+
+      // ===== NUMERAÇÃO DAS PÁGINAS =====
+      const total = doc.bufferedPageRange().count;
+      // Começa do 5 (pula capa, folha de rosto, dedicatória, sumário)
+      for (let i = 4; i < total; i++) {
         doc.switchToPage(i);
-        footer(i);
+        footer(i - 3, total - 4);
       }
 
       doc.end();
