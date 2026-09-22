@@ -10,13 +10,15 @@ const loginSchema = z.object({
   password: z.string().min(6),
 });
 
+// Node runtime — pode usar Prisma e bcrypt.
+// Reaproveita os callbacks jwt/session do authConfig, e adiciona um
+// segundo callback jwt (encadeado) que atualiza role do banco em cada renew.
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 30 }, // 30 dias
   callbacks: {
     ...authConfig.callbacks,
     async jwt({ token, user, trigger }) {
-      // Ao logar
+      // Primeiro roda o callback do config (que copia campos do user pro token)
       if (user) {
         token.id = (user as any).id;
         token.role = (user as any).role;
@@ -25,8 +27,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.email = (user as any).email;
       }
 
-      // Se já tem token, atualiza role/status do banco a cada acesso
-      // (garante que promoção admin/mudança de plano seja refletida sem novo login)
+      // Em cada renovação (sem novo login), atualiza role/status do banco
+      // Assim promoções admin e mudanças de plano são refletidas sem novo login
       if (token.id && !user) {
         try {
           const fresh = await prisma.user.findUnique({
@@ -40,20 +42,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.name = fresh.name;
           }
         } catch (e) {
-          // Falha na consulta não invalida a sessão
           console.warn("jwt refresh:", e);
         }
       }
-
       return token;
-    },
-    async session({ session, token }) {
-      if (session.user && token) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-        (session.user as any).subscriptionStatus = token.subscriptionStatus;
-      }
-      return session;
     },
   },
   providers: [
