@@ -109,7 +109,7 @@ export default function Dashboard() {
       const r = await fetch("/api/gerar-copy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ produto, baseUrl }),
+        body: JSON.stringify({ produto, baseUrl, produtoId }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Erro");
@@ -448,8 +448,19 @@ export default function Dashboard() {
             <div className="space-y-4 mb-8">
               {produto.copies.map((c, i) => (
                 <div key={i} className="p-5 bg-white rounded-2xl border border-neutral-200">
-                  <p className="font-bold text-sm text-brand-700 mb-3">{c.titulo}</p>
-                  <p className="text-sm whitespace-pre-wrap">{c.texto}</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-bold text-sm text-brand-700">{c.titulo}</p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(c.texto);
+                      }}
+                      className="text-xs font-bold text-neutral-600 hover:text-brand-600 border border-neutral-300 hover:border-brand-500 px-3 py-1 rounded-full"
+                      title="Copiar copy inteira"
+                    >
+                      Copiar copy
+                    </button>
+                  </div>
+                  <CopyTexto texto={c.texto} />
                 </div>
               ))}
             </div>
@@ -491,6 +502,37 @@ export default function Dashboard() {
         )}
       </div>
     </main>
+  );
+}
+
+/**
+ * Renderiza o texto de uma copy transformando qualquer URL http/https
+ * em link azul clicável. Preserva quebras de linha do texto original.
+ */
+function CopyTexto({ texto }: { texto: string }) {
+  // Regex: pega http:// ou https:// seguido de qualquer coisa até um espaço, quebra de linha, ou fim
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const partes = texto.split(urlRegex);
+
+  return (
+    <p className="text-sm whitespace-pre-wrap leading-relaxed text-neutral-800">
+      {partes.map((parte, idx) => {
+        if (parte.match(urlRegex)) {
+          return (
+            <a
+              key={idx}
+              href={parte}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 font-semibold underline decoration-blue-400 decoration-1 underline-offset-2 hover:text-blue-800 hover:decoration-blue-600 break-all"
+            >
+              {parte}
+            </a>
+          );
+        }
+        return <span key={idx}>{parte}</span>;
+      })}
+    </p>
   );
 }
 

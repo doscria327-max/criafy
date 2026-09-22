@@ -11,15 +11,9 @@ export default auth(async function middleware(req) {
   const user = (req.auth?.user as any) || null;
 
   if (path === "/admin" || path.startsWith("/admin/")) {
-    if (!user) {
-      // Não logado → login
-      const loginUrl = new URL("/login", req.nextUrl);
-      loginUrl.searchParams.set("callbackUrl", path);
-      return NextResponse.redirect(loginUrl);
-    }
-    if (user.role !== "admin") {
-      // Logado mas não admin → volta pro dashboard normal
-      return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
+    // Se não for admin, mostra 404 (URL parece que não existe)
+    if (!user || user.role !== "admin") {
+      return NextResponse.rewrite(new URL("/nao-encontrado", req.nextUrl));
     }
   }
 

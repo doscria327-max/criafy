@@ -176,49 +176,156 @@ export function gerarCopies(produto: Produto, linkVendas: string) {
   return angulosBase.map((a) => ({ titulo: a.titulo, texto: a.builder() }));
 }
 
+// ============================================================
+// COPIES PROFISSIONAIS — 10 ângulos com estrutura persuasiva
+// Cada copy tem: hook forte, desenvolvimento com dor/solução,
+// prova ou lógica, quebra de objeção e CTA claro com link.
+// ============================================================
+
 function copyDor(p: Produto, n: Nicho, link: string, rng: () => number) {
-  const dor = pick(n.dores, rng);
-  return `${dor}.\n\nSe isso é você, escrevi um material que aborda exatamente esse ponto e mostra o caminho pra reverter.\n\n👉 ${link}`;
+  const dor1 = pick(n.dores, rng);
+  const dor2 = pick(n.dores.filter(d => d !== dor1), rng);
+  const desejo = pick(n.desejos, rng).toLowerCase();
+  return `${dor1}.
+
+E o pior: você já tentou de tudo. ${dor2.toLowerCase()}. E cada nova tentativa frustrada vai minando um pouco mais a esperança de que um dia isso possa mudar.
+
+Eu passei anos entendendo por que a maioria das abordagens falha — e o que finalmente faz a diferença. O resultado desse trabalho está no ${p.nome}: um método construído pra quem quer ${desejo} sem passar pelos mesmos erros.
+
+Se você chegou até aqui, provavelmente é o momento de tentar de forma diferente.
+
+👉 ${link}`;
 }
 
 function copyCuriosidade(p: Produto, n: Nicho, link: string, rng: () => number) {
-  return `${pick(n.angulosCopy, rng)}\n\nExpliquei tudo aqui: ${link}`;
+  const angulo = pick(n.angulosCopy, rng);
+  const beneficio = pick(n.beneficios, rng).toLowerCase();
+  return `${angulo}
+
+Sério. E a resposta contraria quase tudo que te falaram até hoje sobre ${n.nome.toLowerCase()}.
+
+Não é sobre esforço. Não é sobre disciplina. Não é sobre "querer mais". É sobre um princípio simples que quase ninguém aplica — e que muda completamente o jogo pra quem entende.
+
+Explico tudo, passo a passo, no ${p.nome}. Você vai sair de lá sabendo exatamente por que nada funcionou até agora, e o que fazer pra ${beneficio}.
+
+Acesso completo aqui 👇
+${link}`;
 }
 
 function copyHistoria(p: Produto, n: Nicho, link: string, rng: () => number) {
   const dor = pick(n.dores, rng).toLowerCase();
-  return `Uma leitora me escreveu ontem contando que ${dor}.\n\nPassei pra ela o material que criei sobre ${n.nome.toLowerCase()}. Em uma semana ela voltou pra dizer que tinha começado a ver mudança.\n\nSe você tá numa situação parecida, dá uma olhada:\n${link}`;
+  const desejo = pick(n.desejos, rng).toLowerCase();
+  return `Semana passada uma pessoa me mandou mensagem dizendo o seguinte:
+
+"${capitalize(dor)}. Já tentei tantas coisas que perdi a conta. Não acredito mais em nada."
+
+Passei pra ela o ${p.nome}. Sem promessa mirabolante, sem prazo apertado. Só o método, do jeito que faço com todo mundo.
+
+12 dias depois ela voltou. Não pra dizer que resolveu tudo — mas pra dizer que, pela primeira vez em muito tempo, ela conseguiu enxergar o caminho. E que finalmente parece possível ${desejo}.
+
+Se você tá vivendo algo parecido, talvez seja hora de olhar por outro ângulo:
+${link}`;
 }
 
 function copyProva(p: Produto, n: Nicho, link: string, rng: () => number) {
-  return `Já são centenas de pessoas aplicando o ${p.nome} e trazendo resultados reais na área de ${n.nome.toLowerCase()}.\n\nSe você quer entender por que o método é diferente, o material completo tá aqui:\n${link}`;
+  const beneficio = pick(n.beneficios, rng).toLowerCase();
+  return `Centenas de pessoas já aplicaram o ${p.nome}. E o feedback que mais se repete não é sobre a rapidez do resultado — é sobre a clareza do caminho.
+
+A maior parte das pessoas não falha em ${n.nome.toLowerCase()} por preguiça. Falha por confusão. Recebe informação demais, de fontes contraditórias, e não sabe o que priorizar. O ${p.nome} organiza tudo em uma sequência lógica — o que fazer primeiro, o que fazer depois, o que ignorar completamente.
+
+O resultado é gente que sai de anos travada e, em semanas, começa a ${beneficio}.
+
+Se você quer entender por que este método é diferente:
+${link}`;
 }
 
 function copyContraste(p: Produto, n: Nicho, link: string, rng: () => number) {
   const dor = pick(n.dores, rng).toLowerCase();
-  const desejo = pick(n.desejos, rng).toLowerCase();
-  return `De um lado: ${dor}.\nDo outro: ${desejo}.\n\nA diferença entre os dois? Método.\n\n${link}`;
+  const desejo1 = pick(n.desejos, rng).toLowerCase();
+  const desejo2 = pick(n.desejos.filter(d => d.toLowerCase() !== desejo1), rng).toLowerCase();
+  return `Existem dois tipos de pessoa lendo isso agora.
+
+A primeira ainda acredita que vai conseguir sozinha. Que basta esforço, disciplina, "só mais uma tentativa". E enquanto tenta pela enésima vez, continua no lugar onde está: ${dor}.
+
+A segunda entendeu que método bate esforço. Que quem tem um caminho mapeado chega mais rápido do que quem só tenta com força. Essa pessoa está a semanas de finalmente ${desejo1} e ${desejo2}.
+
+A diferença entre as duas não é talento. É a decisão de parar de tentar aleatório e começar a fazer certo.
+
+O ${p.nome} é esse caminho. Está aqui:
+${link}`;
 }
 
 function copyPergunta(p: Produto, n: Nicho, link: string, rng: () => number) {
   const dor = pick(n.dores, rng).toLowerCase();
-  return `Uma pergunta honesta: você ainda tá aceitando que ${dor}?\n\nSe a resposta for não, aqui tem um caminho:\n${link}`;
+  const desejo = pick(n.desejos, rng).toLowerCase();
+  return `Uma pergunta honesta pra você começar o dia:
+
+Quanto tempo mais você vai aceitar que ${dor}?
+
+Não é retórica. É uma pergunta prática. Porque cada semana que passa sem uma decisão real é mais uma semana no mesmo lugar. E daqui a 3 meses, 6 meses, 1 ano, a mesma frustração vai estar aí — só que multiplicada.
+
+Ou você toma uma decisão diferente agora. E daqui a 90 dias começa a ${desejo}.
+
+O ${p.nome} é a decisão diferente. Custa menos que um jantar e resolve o que anos de tentativa aleatória não resolveram:
+${link}`;
 }
 
 function copyLista(p: Produto, n: Nicho, link: string, rng: () => number) {
-  const bens = take(n.beneficios, 3, rng);
-  return `O que você leva com o ${p.nome}:\n\n• ${bens.join("\n• ")}\n\nMais detalhes aqui: ${link}`;
+  const bens = take(n.beneficios, 5, rng);
+  const obj = pick(n.objecoes, rng);
+  return `O que você leva com o ${p.nome}:
+
+✅ ${bens[0]}
+✅ ${bens[1]}
+✅ ${bens[2]}
+✅ ${bens[3]}
+✅ ${bens[4]}
+
+E antes que você pense "${obj.toLowerCase()}" — esse método foi construído justamente pra quem já pensou isso. Todos os passos são aplicáveis na sua realidade, do seu jeito, no seu ritmo.
+
+Acesso imediato assim que confirmar:
+${link}`;
 }
 
 function copyObjecao(p: Produto, n: Nicho, link: string, rng: () => number) {
   const obj = pick(n.objecoes, rng);
-  return `"Mas ${obj}."\n\nEu ouço isso o tempo todo. E é justamente pra esse cenário que criei o material.\n\nDá uma olhada: ${link}`;
+  const desejo = pick(n.desejos, rng).toLowerCase();
+  return `"Mas ${obj.toLowerCase()}."
+
+Eu ouço essa frase todo dia. E entendo — faz sentido pensar assim depois de tantas tentativas frustradas. Mas deixa eu te contar uma coisa: essa objeção específica é exatamente o que o ${p.nome} resolve.
+
+Não vou te pedir pra acreditar em promessa. Vou te pedir pra ler o material, aplicar por 14 dias, e ver por si mesmo se faz sentido. Se não fizer, você não perdeu quase nada. Se fizer, você acabou de encontrar o caminho pra finalmente ${desejo}.
+
+O acesso completo tá aqui:
+${link}`;
 }
 
 function copyPromessa(p: Produto, n: Nicho, link: string, rng: () => number) {
-  return `${p.headline}\n\nSem enrolação, sem promessa milagrosa. Método real.\n\n${link}`;
+  const desejo = pick(n.desejos, rng).toLowerCase();
+  const beneficio = pick(n.beneficios, rng).toLowerCase();
+  return `${p.headline}
+
+Sem promessa milagrosa. Sem "resultado em 7 dias". Sem prometer que sua vida vai mudar do nada.
+
+O que o ${p.nome} entrega é método real: um caminho estruturado pra você ${desejo}, aplicando um passo por vez, no seu ritmo. Você vai ${beneficio} porque o método foi construído pra isso — não porque a copy prometeu bonito.
+
+Se você prefere resultado real a discurso motivacional, esse material foi feito pra você:
+${link}`;
 }
 
 function copyUrgencia(p: Produto, n: Nicho, link: string, rng: () => number) {
-  return `Deixar pra depois é o que te trouxe até aqui.\n\nO ${p.nome} tá disponível agora, com bônus limitados essa semana.\n\n${link}`;
+  const dor = pick(n.dores, rng).toLowerCase();
+  return `Deixar pra depois é exatamente o que te trouxe até aqui.
+
+Cada vez que você adiou a decisão, cada vez que "amanhã começo", cada vez que "esse mês tá corrido" — o resultado foi o mesmo: ${dor}. E não é falha sua. É natural. Só que a única forma de sair desse ciclo é fazer uma escolha diferente hoje.
+
+O ${p.nome} está com condições especiais essa semana + bônus que só entram nas primeiras adesões. Depois disso, o valor volta ao normal e alguns bônus saem.
+
+Se hoje é o dia em que você decide diferente:
+${link}`;
+}
+
+// Helper
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }

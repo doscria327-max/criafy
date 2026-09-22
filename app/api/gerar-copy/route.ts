@@ -7,13 +7,20 @@ export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
-    const { produto, baseUrl } = (await req.json()) as { produto: Produto; baseUrl: string };
+    const { produto, baseUrl, produtoId } = (await req.json()) as {
+      produto: Produto;
+      baseUrl: string;
+      produtoId?: string;
+    };
     if (!produto) return NextResponse.json({ error: "Produto ausente." }, { status: 400 });
 
     await new Promise((r) => setTimeout(r, 500 + Math.random() * 500));
 
-    const tokenBase = encodeProduto(produto);
-    const link = `${baseUrl || ""}/produto/${produto.slug}?d=${tokenBase}`;
+    // Se temos o id do banco, gera link curto. Senão, fallback pro formato antigo.
+    const link = produtoId
+      ? `${baseUrl || ""}/p/${produtoId}`
+      : `${baseUrl || ""}/produto/${produto.slug}?d=${encodeProduto(produto)}`;
+
     const copies = gerarCopies(produto, link);
 
     const novo = { ...produto, copies };
